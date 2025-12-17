@@ -1,0 +1,108 @@
+<?xml version="1.0"?>
+
+<PropertyList>
+  <name type="string">VKB-Sim (C) Alex Oz 2023 S-TECS MODERN THROTTLE STANDARD STEM </name>
+  
+    <nasal>
+        <script><![CDATA[
+#
+# Other nasal code you may have in this script section
+# . . 
+# . . 
+#
+
+##
+# Setup of modifier (shift)
+#
+            # Set listener only on first run of this file
+			var init = !contains(caller(0)[0], "init");
+			var jslistener = func init and call(setlistener, arg);
+            
+            # Arrange property node for modifier (shift) button
+            var modPath = "/devices/status/joysticks/modifier";
+			var mod = 0;
+			var m = props.globals.initNode(modPath, mod, "INT");
+			jslistener(m, func(n) mod = n.getValue());
+
+##
+# Load the demultiplexer
+#
+            var demux = "dmx"; # Namespace for demultiplexer. Change name here only in case of collision.
+
+            var bdn = func() {}; # stub function until demultiplexer is loaded
+            var bup = func() {}; # stub function until demultiplexer is loaded
+
+            if (globals[demux] == nil) {
+                var fghome = getprop("/sim/fg-home");
+                if (fghome != nil) {
+                    var file = fghome ~ "/Input/Joysticks/cdmux.nas";
+                    if (io.stat(file) != nil) {
+                        io.load_nasal(file, demux);
+                        print('Loaded ' ~ file);
+                        }
+                    }
+                }
+            
+            # Load the demultiplexer setup for the current aircraft and joystick
+            var hidname = 'VKB_S-TECS_STEM';
+            var load_dmx_config = globals[demux]["load_dmx_config"];
+            
+            if (load_dmx_config(hidname)) {
+                # Demultiplexer is loaded. Connect to its methods for button down/up
+                var bdn = globals[demux]["bdn"];
+                var bup = globals[demux]["bup"];
+                }
+]]></script>
+    </nasal>
+
+<!-- Only button bindings shown for shift key and encoder EN1. Axes bindings not shown -->
+
+<button n="6">
+  <desc>Joystick Shift Key</desc>
+  <binding>
+   <command>nasal</command>
+   <script>
+     setprop(modPath, 1);
+   </script>
+  </binding>
+  <mod-up>
+   <binding>
+    <command>nasal</command>
+    <script>
+      setprop(modPath, 0);
+    </script>
+   </binding>
+  </mod-up>
+</button>
+
+<button n="26">
+  <desc>Encoder EN1 ccw rotation</desc>
+  <binding>
+   <command>nasal</command><script>bdn(26);</script>
+  </binding>
+  <mod-up><binding>
+    <command>nasal</command><script>bup(26);</script>
+  </binding></mod-up>
+</button>
+
+<button n="27">
+  <desc>Encoder EN1 cw rotation</desc>
+  <binding>
+   <command>nasal</command><script>bdn(27);</script>
+  </binding>
+  <mod-up><binding>
+    <command>nasal</command><script>bup(27);</script>
+  </binding></mod-up>
+</button>
+
+<button n="30">
+  <desc>Encoder EN1 knob press</desc>
+  <binding>
+   <command>nasal</command><script>bdn(30);</script>
+  </binding>
+  <mod-up><binding>
+    <command>nasal</command><script>bup(30);</script>
+  </binding></mod-up>
+</button>
+
+</PropertyList>
