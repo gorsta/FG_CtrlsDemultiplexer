@@ -101,11 +101,13 @@ var PanelSwitches_L_side = [
 
 var EngCtrls = [
     {name	: "Magnetos, starter and fuel", 
-    a_long	: ["adjust", ["Magnetos: %u", "/controls/switches/magnetos", -1, 0, 3]],
-    b_long	: ["adjust", ["Magnetos: %u", "/controls/switches/magnetos", 1, 0, 3]],
+    a_long	: ["adjust", ["Magnetos:OFF;R;L;BOTH", "/controls/switches/magnetos", -1, 0, 3]],
+    b_long	: ["adjust", ["Magnetos:OFF;R;L;BOTH", "/controls/switches/magnetos", 1, 0, 3]],
     
-    b_down : ["script", ["Starter", func {if (getprop("/controls/switches/magnetos")==3) {
+    b_down : ["script", ["", func {if (getprop("/controls/switches/magnetos")==3) {
 		             setprop("/controls/switches/starter", 1);
+		             gui.popupTip("Starter", 0.5); 
+		             # Display popup only when the starter is activated
 		             }
 		        }]],
       b_up : ["script", ["", func {if (getprop("/controls/switches/magnetos")==3) {
@@ -113,10 +115,9 @@ var EngCtrls = [
 		             }
 		        }]],
 
-    d_long	: ["adjust", ["Tank selector: %u", "/controls/switches/fuel_tank_selector", -1, 0, 3]],
-    e_long	: ["adjust", ["Tank selector: %u", "/controls/switches/fuel_tank_selector", 1, 0, 3]],
-    # Could not figure out how to involve the animation
-    # Shouls give adjust the option to wrap around instead of clamping
+    d_long	: ["adjust", ["Tanks:OFF;RIGHT;BOTH;LEFT", "/controls/switches/fuel_tank_selector", -1, 0, 3, 1]],
+    e_long	: ["adjust", ["Tanks OFF;Tank RIGHT;Tanks BOTH;Tank LEFT", "/controls/switches/fuel_tank_selector", 1, 0, 3, 1]],
+    # Could not figure out how to involve the animation of the fuel tank selector
     },
     ];
 

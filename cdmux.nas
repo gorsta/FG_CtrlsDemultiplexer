@@ -18,6 +18,9 @@ print('*** cdmux *** : loading cdmux');
 var duration = 0.5; # popup duration
 var longpress = 0.4; # button down duration required for "long" press
 
+var del = ";"; # substring (not label) delimiter
+var del2 = ":"; # label delimiter
+
 var fghome = getprop("/sim/fg-home");
 var matchingpatternsfile = "dmuxmatchmodel.nas";
 var shiftPropertyPath = "/devices/status/joysticks/modifier";
@@ -73,24 +76,39 @@ var load_into = func (hash, nasfile) {
 var showPopup = func(str, fmt=nil, prop=nil) {
 # Show popup
     if (size(str) > 0 ) {
+        var s = nil;
+        if (string.match(str, "*" ~ del2 ~ "*")) {
+			   # String contains a label substring. Extract the label.
+            s = split(del2, str);
+            str = s[1]; # substrings without the label one
+            s = s[0]; # the label
+            }
+        if (string.match(str, "*" ~ del ~ "*")) {
+			   # String contains substrings. Pick the relevant one.
+            str = split(del, str);
+            str = str[getprop(prop)];
+#            if (s!=nil) {str = s ~ ": " ~ str;}
+            }
+        if (s!=nil) {str = s ~ ": " ~ str;} # prepend the label
+        
         if (prop==nil) {
             # no property given, just print string
             gui.popupTip(str, duration);
+            return;
             }
-        else if (string.match(str, "*%*")) {
+        if (string.match(str, "*%*")) {
             # string has format specificaation print string and property value
             gui.popupTip(sprintf(str, getprop(prop)), duration);
+            return;
             }
-        else if (string.match(str, "* ")) {
+        if (string.match(str, "* ")) {
             # string ends with space: add format and print string and property value
             if (fmt==nil) {fmt = "%u";}
 			   gui.popupTip(sprintf(str~fmt, getprop(prop)), duration);
+            return;
 			   }
-        else {
-            # print string and property
-            gui.popupTip(str, duration);
-#            gui.popupTip(sprintf(str, getprop(prop)), duration);
-            }
+         # string does not end with a space: print string
+         gui.popupTip(str, duration);
         }
     }
 
@@ -108,7 +126,7 @@ var script = func(popup, function) {
     return 1; # Task is completed regardless wether the script was successful or not
     }
 
-var adjust = func(popup, property, step=1, minval=0, maxval=1) {
+var adjust = func(popup, property, step=1, minval=0, maxval=1, wrap=0) {
 # Adjust a property within bounds
     var min = minval;
     var max = maxval;
@@ -117,12 +135,22 @@ var adjust = func(popup, property, step=1, minval=0, maxval=1) {
     var t = getprop(p);
     if (t != nil ) {
         t += s;
-        if (s < 0) {
-            t = t < min ? min : t;
-            }
+        if (wrap) {
+            if (s < 0) {
+                t = t < min ? max : t;
+                }
+            else {
+                t = t > max ? min : t;
+                }
+            } 
         else {
-            t = t > max ? max : t;
-            }
+            if (s < 0) {
+                t = t < min ? min : t;
+                }
+            else {
+                t = t > max ? max : t;
+                }
+            } 
         setprop(p, t);
         }
     showPopup(popup, "%.2f", p);
