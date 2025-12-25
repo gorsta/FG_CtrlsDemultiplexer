@@ -28,24 +28,24 @@ print("Loading dc-3 S-TECS_STEM dmux");
 var hidCtrls = ["EN1", "EN2", "SW12"];
 
 var EN1buttons = {
-    26: "aa",
-    27: "bb",
-    30: "cc",
+    26: "aa", # encoder ccw
+    27: "bb", # encoder cw
+    30: "cc", # encoder PB
     };
 
 var EN2buttons = {
-    28: "aa",
-    29: "bb",
-    31: "cc",
+    28: "aa", # encoder ccw
+    29: "bb", # encoder cw
+    31: "cc", # encoder PB
     };
 
 var SW12buttons = {
-    15: "aa",
-    17: "bb",
-    16: "c",
-    18: "d",
-    20: "e",
-    19: "f",
+    15: "aa", # sw1 toggle up
+    17: "bb", # sw1 toggle down
+    16: "c",  # sw1 PB
+    18: "d",  # sw2 toggle up
+    20: "e",  # sw2 toggle down
+    19: "f",  # sw2 PB
     };
 
 var EN1items = ["FltInstr"];

@@ -66,12 +66,12 @@ var FltInstr = [
     bb_short: ["adjust", ["Inc radio light", "controls/lighting/radio-lights-norm", 0.05, 0, 1.0]],
     }, 
     {name	: "Pedestal light", 
-    aa_short: ["adjust", ["Dec instr light", "controls/lighting/pedestal-lights-norm", -0.05, 0, 1.0]],
-    bb_short: ["adjust", ["Inc instr light", "controls/lighting/pedestal-lights-norm", 0.05, 0, 1.0]],
+    aa_short: ["adjust", ["Dec pedestal light", "controls/lighting/pedestal-lights-norm", -0.05, 0, 1.0]],
+    bb_short: ["adjust", ["Inc pedestal light", "controls/lighting/pedestal-lights-norm", 0.05, 0, 1.0]],
     }, 
     {name	: "Glareshield light", 
-    aa_short: ["adjust", ["Dec radio light", "controls/lighting/glareshield-lights-norm", -0.05, 0, 1.0]],
-    bb_short: ["adjust", ["Inc radio light", "controls/lighting/glareshield-lights-norm", 0.05, 0, 1.0]],
+    aa_short: ["adjust", ["Dec glareshield light", "controls/lighting/glareshield-lights-norm", -0.05, 0, 1.0]],
+    bb_short: ["adjust", ["Inc glareshield light", "controls/lighting/glareshield-lights-norm", 0.05, 0, 1.0]],
     }, 
     ];
 
