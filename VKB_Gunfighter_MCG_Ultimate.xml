@@ -77,7 +77,7 @@
   </mod-up>
 </button>
 
-<!-- View Direction :: stick left side hat -->
+<!-- Stick left side hat PB -->
 <button n="8">
   <desc>Stick left side hat push button</desc>
   <binding>

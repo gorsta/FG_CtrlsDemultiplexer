@@ -153,6 +153,9 @@ var adjust = func(popup, property, step=1, minval=0, maxval=1, wrap=0) {
             } 
         setprop(p, t);
         }
+    else {
+        popup = "Property does not exist or value is NaN";
+	     }
     showPopup(popup, "%.2f", p);
     return 1; # Task is completed regardless wether a property was changed or not
     }
@@ -162,6 +165,9 @@ var toggle = func(popup, property) {
     var p = property;
     var t = getprop(p);
     if(t != nil ) {setprop(p, math.mod(t += 1, 2))}
+    else {
+        popup = "Property does not exist or value is NaN";
+	     }
     showPopup(popup, "%u", p);
     return 1; # Task is completed regardless wether a property was toggled or not
     }
