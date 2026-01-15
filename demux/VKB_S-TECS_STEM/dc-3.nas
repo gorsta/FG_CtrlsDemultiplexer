@@ -28,6 +28,7 @@ print("Loading dc-3 S-TECS_STEM dmux");
 # Groups of buttons to use with the demultipleser
 #
 var hidCtrls = ["EN1", "EN2", "SW12"];
+#var hidCtrls = ["EN1"];
 
 ##
 # Button connections
@@ -57,8 +58,10 @@ var SW12buttons = {
 # Groups of sim/cockpit controls for the demultiplexer
 #
 var EN1items = ["FltInstr", "Autopilot"];
+#var EN1items = ["FltInstr"];
 
 var EN2items = ["NavLights", "Radio"];
+#var EN2items = ["NavLights"];
 
 var SW12items = ["EngCtrls"];
 
@@ -66,17 +69,26 @@ var SW12items = ["EngCtrls"];
 # Sim/cockpit controls
 #
 var FltInstr = [ 
-    {name	: "ALTimeter", 
-    aa_short: ["adjust", ["ALTimeter: %.2f inHg", "instrumentation/altimeter/setting-inhg", -0.02, 27.5, 31]],
-    bb_short: ["adjust", ["ALTimeter: %.2f inHg", "instrumentation/altimeter/setting-inhg", 0.02, 27.5, 31]],
+    {name	: "ALTimeter: %.2f inHg", 
+    prop	   : ["instrumentation/altimeter/setting-inhg", 
+               "controls/lighting/compass-lights"],		# remove this
+    aa_short: ["adjust", [-0.02, 27.5, 31]],
+    bb_short: ["adjust", [0.02, 27.5, 31]],
+    }, 
+    {name	: "ALTimeter: %.1f hPa", 
+    prop	   : "instrumentation/altimeter/setting-hpa", 
+    aa_short: ["adjust", [-0.5, 931, 1050]],
+    bb_short: ["adjust", [0.5, 931, 1050]],
     }, 
     {name	: "Instr light", 
-    aa_short: ["adjust", ["Dec instr light", "controls/lighting/instruments-norm", -0.02, 0, 0.16]],
-    bb_short: ["adjust", ["Inc instr light", "controls/lighting/instruments-norm", 0.02, 0, 0.16]],
+    prop	   : "controls/lighting/instruments-norm", 
+    aa_short: ["adjust", ["Dec instr light", -0.02, 0, 0.16]],
+    bb_short: ["adjust", ["Inc instr light", 0.02, 0, 0.16]],
     }, 
-    {name	: "Compass light", 
-    aa_short: ["adjust", ["Compass light off", "controls/lighting/compass-lights", -1]],
-    bb_short: ["adjust", ["Compass light on", "controls/lighting/compass-lights", 1]],
+    {name	: "Compass light:off;on", 
+    prop	   : "controls/lighting/compass-lights", 
+    aa_short: ["adjust", [-1]],
+    bb_short: ["adjust", [1]],
     }, 
     ];
 
@@ -136,19 +148,24 @@ var Autopilot = [
 #
 var NavLights = [
     {name	: "L landing light", 
-    cc_short: ["toggle", ["/controls/lighting/landing-lights"]],
+    prop	   : "/controls/lighting/landing-lights", 
+    cc_short: ["toggle", []],
     }, 
     {name	: "R landing light", 
-    cc_short: ["toggle", ["/controls/lighting/taxi-light"]],
+    prop	   : "/controls/lighting/taxi-light", 
+    cc_short: ["toggle", []],
     }, 
-    {name	: "Passing light ", 
-    cc_short: ["toggle", ["/controls/lighting/strobe"]],
+    {name	: "Passing light:off;on", 
+    prop	   : "/controls/lighting/strobe", 
+    cc_short: ["toggle", []],
     }, 
-    {name	: "Running light ", 
-    cc_short: ["toggle", ["/controls/lighting/nav-lights"]],
+    {name	: "Running light:off;on", 
+    prop	   : "/controls/lighting/nav-lights", 
+    cc_short: ["toggle", []],
     },
-    {name	: "Tail light ", 
-    cc_short: ["toggle", ["/controls/lighting/beacon"]],
+    {name	: "Tail light:off;on", 
+    prop	   : "/controls/lighting/beacon", 
+    cc_short: ["toggle", []],
     }, 
     ];
 

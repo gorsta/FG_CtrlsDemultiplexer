@@ -36,8 +36,12 @@ var EN1buttons = {
 var EN1items = ["FltInstr"];
 
 var FltInstr = [ 
-    {name	: "ALTimeter", 
+    {name	: "ALTimeter (inhg)", 
     aa_short: ["adjust", ["ALTimeter: %.2f inHg", "instrumentation/altimeter/setting-inhg", -0.02, 27.5, 31]],
     bb_short: ["adjust", ["ALTimeter: %.2f inHg", "instrumentation/altimeter/setting-inhg", 0.02, 27.5, 31]],
+    }, 
+    {name	: "ALTimeter (hPa)", 
+    aa_short: ["adjust", ["ALTimeter: %.1f hPa", "instrumentation/altimeter/setting-hpa", -0.5, 931, 1050]],
+    bb_short: ["adjust", ["ALTimeter: %.1f hPa", "instrumentation/altimeter/setting-hpa", 0.5, 931, 1050]],
     }, 
     ];

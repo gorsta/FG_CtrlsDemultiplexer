@@ -15,7 +15,7 @@
 
 print('*** cdmux *** : loading cdmux');
 
-var duration = 0.5; # popup duration
+var duration = 2.5; # popup duration
 var longpress = 0.4; # button down duration required for "long" press
 
 var del = ";"; # substring (not label) delimiter
@@ -73,9 +73,15 @@ var load_into = func (hash, nasfile) {
 # Demultiplexer actions
 #
 
-var showPopup = func(str, fmt=nil, prop=nil) {
+var showPopup = func(str, fmt=nil, props=nil) {
 # Show popup
+    if (false) { # true: debug
+        print("str: ", str);
+        print("fmt: ", fmt);
+        debug.dump(props);}
+
     if (size(str) > 0 ) {
+        var prop = isvec(props) ? props[0] : props;
         var s = nil;
         if (string.match(str, "*" ~ del2 ~ "*")) {
 			   # String contains a label substring. Extract the label.
@@ -87,7 +93,6 @@ var showPopup = func(str, fmt=nil, prop=nil) {
 			   # String contains substrings. Pick the relevant one.
             str = split(del, str);
             str = str[getprop(prop)];
-#            if (s!=nil) {str = s ~ ": " ~ str;}
             }
         if (s!=nil) {str = s ~ ": " ~ str;} # prepend the label
         
@@ -97,7 +102,7 @@ var showPopup = func(str, fmt=nil, prop=nil) {
             return;
             }
         if (string.match(str, "*%*")) {
-            # string has format specificaation print string and property value
+            # string has format specification print string and property value
             gui.popupTip(sprintf(str, getprop(prop)), duration);
             return;
             }
@@ -126,49 +131,38 @@ var script = func(popup, function) {
     return 1; # Task is completed regardless wether the script was successful or not
     }
 
-var adjust = func(popup, property, step=1, minval=0, maxval=1, wrap=0) {
+var adjust = func(popup, props, step=1, min=0, max=1, wrap=0) {
 # Adjust a property within bounds
-    var min = minval;
-    var max = maxval;
-    var p = property;
-    var s = step;
-    var t = getprop(p);
+    var prop = isvec(props) ? props[0] : props;
+    var t = getprop(prop);
     if (t != nil ) {
-        t += s;
+        t += step;
         if (wrap) {
-            if (s < 0) {
-                t = t < min ? max : t;
-                }
-            else {
-                t = t > max ? min : t;
-                }
+            if (t < min) {t = max;}
+            else if (t > max){t = min;}
             } 
         else {
-            if (s < 0) {
-                t = t < min ? min : t;
-                }
-            else {
-                t = t > max ? max : t;
-                }
+            if (t < min) {t = min;}
+            else if (t > max){t = max;}
             } 
-        setprop(p, t);
+        setprop(prop, t);
         }
     else {
-        popup = "Property does not exist or value is NaN";
+        popup = prop~"\ndoes not exist or value is NaN";
 	     }
-    showPopup(popup, "%.2f", p);
+    showPopup(popup, "%.2f", props);
     return 1; # Task is completed regardless wether a property was changed or not
     }
 
-var toggle = func(popup, property) {
+var toggle = func(popup, props) {
 # Toggle a property
-    var p = property;
-    var t = getprop(p);
-    if(t != nil ) {setprop(p, math.mod(t += 1, 2))}
+    var prop = isvec(props) ? props[0] : props;
+    var t = getprop(prop);
+    if(t != nil ) {setprop(prop, math.mod(t += 1, 2))}
     else {
-        popup = "Property does not exist or value is NaN";
+        popup = prop~"\ndoes not exist or value is NaN";
 	     }
-    showPopup(popup, "%u", p);
+    showPopup(popup, "%u", props);
     return 1; # Task is completed regardless wether a property was toggled or not
     }
 
@@ -387,22 +381,78 @@ var load_dmx_config = func (hid) {
                 forindex(var k; simControlGroup.items) {
                     foreach(var key; keys(simControlGroup.items[k])) {
                         var act = simControlGroup.items[k][key];
-                        if (key != "name") {
+                        if (key != "name" and key != "prop") {
+									####################
+######################################################################
+                            # When popup string is missing, prepend the item name 
+                            # as popup string to the parameter vector
+                            var db = 0; # 1: debug
+                            
+                            if (size(act) > 1) {
+										 if (db) {print("act > 1");}
+										 if (db) {debug.dump(act);}
+                                var pars = act[1];
+                                act[1] = []; 
+										 if (db) {debug.dump(act);}
+										 }
+                            else {
+										 if (db) {print("act < 2");}
+                                var pars = [];
+										 if (db) {debug.dump(act);}
+                                append(act, []);
+										 if (db) {debug.dump(act);}
+                                }
+                                
+								    if (db) {debug.dump(act);}
+										 
+                            var m = 0;
+                            # pars has at least on item and item is popup string
+                            if (size(pars) > m and isstr(pars[m]) and !string.match(pars[m], "*/*")) {
+										  if (db) {print("1 m = ", m);}
+                                if (db) {debug.dump(act[1]);}
+                                append(act[1], pars[m]);
+                                if (db) {debug.dump(act[1]);}
+                                m += 1;
+										  if (db) {print("2 m = ", m);}
+                                }
+                            else {
+                                append(act[1], simControlGroup.items[k]["name"]);
+										  if (db) {print("3 m = ", m);}
+                                if (db) {debug.dump(act[1]);}
+                                }
+                            
+                            # pars has a next item and item is prop
+                            if (size(pars) > m) {var par = isvec(pars[m]) ? pars[m][0] : pars[m];}
+                            if (size(pars) > m and isstr(par) and string.match(par, "*/*")) {
+ 										  if (db) {print("4 m = ", m);}
+                                append(act[1], pars[m]);
+                                if (db) {debug.dump(act[1]);}
+                                m += 1;
+										  if (db) {print("5 m = ", m);}
+                                }
+                            else if (act[0] != "script") {
+                                # test that "prop" exist
+										  if (db) {print("6 m = ", m);}
+                                append(act[1], simControlGroup.items[k]["prop"]);
+                                if (db) {debug.dump(act[1]);}
+										  if (db) {print("7 m = ", m);}
+                                }
+                            
+                            while (size(pars) > m ) {
+                                append(act[1], pars[m]);
+                                if (db) {debug.dump(act[1]);}
+                                m += 1;
+                                }
+
                             if (act[0] == "toggle") {
                                 act[0] = toggle}
                             else if (act[0] == "adjust") {
                                 act[0] = adjust}
                             else if (act[0] == "script") {
 										  act[0] = script}
-                            # When popup string is missing, prepend the item name 
-                            # as popup string to the parameter vector
-                            if (!isstr(act[1][0]) or string.match(act[1][0], "*/*")) {
-                                var lst = act[1];
-                                act[1] = [simControlGroup.items[k]["name"]];
-                                forindex(var m; lst) {
-										      append(act[1], lst[m]);
-												}
-										  } #else if (act[0] == "script") {act[0] = script}
+
+                            if (db) {debug.dump(act[1]);}
+                            
                             }
                         }
                     }
@@ -444,7 +494,9 @@ var action = func(nbr, evnt) {
             if (call(act[0], act[1], item)) {
                 if (i < 2) {                # show the item pointed to by the new focus
                     if (act[size(act)-1] == "show") {
-                        gui.popupTip(item.items[item.fcs].name, 0.5)
+							   newItem = item.items[item.fcs];
+							   var prop = contains(newItem, "prop") ? newItem.prop : nil;
+							   showPopup(newItem.name, nil, prop)
                         }
                     }
                 break;
