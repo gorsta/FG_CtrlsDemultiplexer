@@ -61,34 +61,39 @@ var EN1items = ["FltInstr", "Autopilot"];
 #var EN1items = ["FltInstr"];
 
 var EN2items = ["NavLights", "Radio"];
-#var EN2items = ["NavLights"];
+#var EN2items = ["Radio"];
 
 var SW12items = ["EngCtrls"];
 
 ##
 # Sim/cockpit controls
 #
+
+
 var FltInstr = [ 
     {name	: "ALTimeter: %.2f inHg", 
-    prop	   : ["instrumentation/altimeter/setting-inhg", 
-               "controls/lighting/compass-lights"],		# remove this
+    prop	   : "instrumentation/altimeter/setting-inhg", 
     aa_short: ["adjust", [-0.02, 27.5, 31]],
     bb_short: ["adjust", [0.02, 27.5, 31]],
+    cc_long : ["popup"],
     }, 
     {name	: "ALTimeter: %.1f hPa", 
     prop	   : "instrumentation/altimeter/setting-hpa", 
     aa_short: ["adjust", [-0.5, 931, 1050]],
     bb_short: ["adjust", [0.5, 931, 1050]],
+    cc_long : ["popup"],
     }, 
     {name	: "Instr light", 
     prop	   : "controls/lighting/instruments-norm", 
     aa_short: ["adjust", ["Dec instr light", -0.02, 0, 0.16]],
     bb_short: ["adjust", ["Inc instr light", 0.02, 0, 0.16]],
+    cc_long : ["popup"],
     }, 
     {name	: "Compass light:off;on", 
     prop	   : "controls/lighting/compass-lights", 
     aa_short: ["adjust", [-1]],
     bb_short: ["adjust", [1]],
+    cc_long : ["popup"],
     }, 
     ];
 
@@ -102,9 +107,11 @@ var FltInstr = [
 # $FG_ROOT/gui/dialogs/autopilot.xml
 #
 var Autopilot = [ 
-    {name	: "AP altitude", 
-    aa_short: ["adjust", ["Target alt ", "autopilot/settings/target-altitude-ft", -50, 1000, 20000]],
-    bb_short: ["adjust", ["Target alt ", "autopilot/settings/target-altitude-ft", 50, 1000, 20000]],
+    {name	: "AP altitude\n%u feet set\n%s", 
+    prop	   : ["autopilot/settings/target-altitude-ft", 
+               "/autopilot/locks/altitude"],
+    aa_short: ["adjust", [-50, 1000, 20000]],
+    bb_short: ["adjust", [50, 1000, 20000]],
     cc_short: ["script", ["", func {var node = props.globals.getNode("/autopilot/locks/altitude", 1); 
         if (node.getValue() != nil) {
         if (node.getValue() == "altitude-hold") {
@@ -114,10 +121,13 @@ var Autopilot = [
             gui.popupTip("AP Alt engaged", 0.5);}
 		      }
 		      }]],
+    cc_long : ["popup"],
     }, 
-    {name	: "AP heading", 
-    aa_short: ["adjust", ["Hedaing bug ", "autopilot/settings/heading-bug-deg", -1, 0, 359, 1]],
-    bb_short: ["adjust", ["Hedaing bug ", "autopilot/settings/heading-bug-deg", 1, 0, 359, 1]],
+    {name	: "AP heading\n%u deg set\n%s", 
+    prop	   : ["autopilot/settings/heading-bug-deg", 
+               "/autopilot/locks/heading"],
+    aa_short: ["adjust", [-1, 0, 359, 1]],
+    bb_short: ["adjust", [1, 0, 359, 1]],
     cc_short: ["script", ["", func {var node = props.globals.getNode("/autopilot/locks/heading", 1); 
         if (node.getValue() != nil) {
         if ( node.getValue() == "dg-heading-hold") {
@@ -127,8 +137,11 @@ var Autopilot = [
             gui.popupTip("AP Head engaged", 0.5);}   
 		      }
 		      }]],
+    cc_long : ["popup"],
     }, 
-    {name	: "AP speed", 
+    {name	: "AP speed\n%u kt set\n%s", 
+    prop	   : ["autopilot/settings/target-speed-kt", 
+               "/autopilot/locks/speed"],
     aa_short: ["adjust", ["Target speed ", "autopilot/settings/target-speed-kt", -5, 110, 140]],
     bb_short: ["adjust", ["Target speed ", "autopilot/settings/target-speed-kt", 5, 110, 140]],
     cc_short: ["script", ["", func {var node = props.globals.getNode("/autopilot/locks/speed", 1); 
@@ -140,6 +153,7 @@ var Autopilot = [
             gui.popupTip("AP Throttle engaged", 0.5);}   
 		      }
 		      }]],
+    cc_long : ["popup"],
     }, 
     ];
 
@@ -149,23 +163,28 @@ var Autopilot = [
 var NavLights = [
     {name	: "L landing light", 
     prop	   : "/controls/lighting/landing-lights", 
-    cc_short: ["toggle", []],
+    cc_short: ["toggle", []], # Leave this as an example
+    cc_long : ["popup"],
     }, 
     {name	: "R landing light", 
     prop	   : "/controls/lighting/taxi-light", 
-    cc_short: ["toggle", []],
+    cc_short: ["toggle"],
+    cc_long : ["popup"],
     }, 
     {name	: "Passing light:off;on", 
     prop	   : "/controls/lighting/strobe", 
-    cc_short: ["toggle", []],
+    cc_short: ["toggle"],
+    cc_long : ["popup"],
     }, 
     {name	: "Running light:off;on", 
     prop	   : "/controls/lighting/nav-lights", 
-    cc_short: ["toggle", []],
+    cc_short: ["toggle"],
+    cc_long : ["popup"],
     },
     {name	: "Tail light:off;on", 
     prop	   : "/controls/lighting/beacon", 
-    cc_short: ["toggle", []],
+    cc_short: ["toggle"],
+    cc_long : ["popup"],
     }, 
     ];
 
@@ -177,186 +196,115 @@ var NavLights = [
 # https://wiki.flightgear.org/Radio_navigation
 # $FG_ROOT/gui/dialogs/radios.xml
 #
-var freqDispCOM1 = func {
-    gui.popupTip(sprintf("COM1\n%.3f MHz selected\n%.3f MHz standby", 
-    getprop("/instrumentation/comm[0]/frequencies/selected-mhz"), 
-    getprop("/instrumentation/comm[0]/frequencies/standby-mhz")), 5);
-    }
-
-var freqDispCOM2 = func {
-    gui.popupTip(sprintf("COM2\n%.3f MHz selected\n%.3f MHz standby", 
-    getprop("/instrumentation/comm[1]/frequencies/selected-mhz"), 
-    getprop("/instrumentation/comm[1]/frequencies/standby-mhz")), 5);
-    }
-
-var freqDispNAV1 = func {
-    gui.popupTip(sprintf("NAV1\n%.3f MHz selected\n%.3f MHz standby\nradial %u deg", 
-    getprop("/instrumentation/nav[0]/frequencies/selected-mhz"), 
-    getprop("/instrumentation/nav[0]/frequencies/standby-mhz"),
-    getprop("/instrumentation/nav[0]/radials/selected-deg")), 5);
-    }
-
-var freqDispNAV2 = func {
-    gui.popupTip(sprintf("NAV2\n%.3f MHz selected\n%.3f MHz standby\nradial %u deg", 
-    getprop("/instrumentation/nav[1]/frequencies/selected-mhz"), 
-    getprop("/instrumentation/nav[1]/frequencies/standby-mhz"),
-    getprop("/instrumentation/nav[1]/radials/selected-deg")), 5);
-    }
-
-var freqDispADF = func {
-    gui.popupTip(sprintf("ADF\n%u kHz selected\n%u kHz standby\nradial %u deg", 
-    getprop("/instrumentation/adf/frequencies/selected-khz"), 
-    getprop("/instrumentation/adf/frequencies/standby-khz"),
-    getprop("/instrumentation/adf/rotation-deg")), 5);
-    }
-
-var freqDispDME = func {
-    gui.popupTip(sprintf("DME\n%.3f MHz selected", 
-    getprop("/instrumentation/dme/frequencies/selected-mhz")), 5);
-    }
-
 var Radio = [
-    {name	: "COM1 (1 MHz)", 
-    aa_short: ["adjust", ["COM1 (1 MHz) stdby %.3f MHz", "/instrumentation/comm[0]/frequencies/standby-mhz", -1, 118, 136.975]],
-    bb_short: ["adjust", ["COM1 (1 MHz) stdby %.3f MHz", "/instrumentation/comm[0]/frequencies/standby-mhz", 1, 118, 136.975]],
-    cc_short: ["script", ["", func {
-        var fSel = getprop("/instrumentation/comm[0]/frequencies/selected-mhz"); 
-        var fstb = getprop("/instrumentation/comm[0]/frequencies/standby-mhz"); 
-        setprop("/instrumentation/comm[0]/frequencies/selected-mhz", fstb);
-        setprop("/instrumentation/comm[0]/frequencies/standby-mhz", fSel);
-        freqDispCOM1();}]],
-    cc_long: ["script", ["", func {
-        freqDispCOM1();}]],
+    {name	: "COM1 (1 MHz)\n%.3f MHz standby\n%.3f MHz selected", 
+    prop	   : ["/instrumentation/comm[0]/frequencies/standby-mhz", 
+               "/instrumentation/comm[0]/frequencies/selected-mhz"],
+    aa_short: ["adjust", [-1, 118, 136.975]],
+    bb_short: ["adjust", [1, 118, 136.975]],
+    cc_short: ["swap",],
+    cc_long : ["popup"],
     }, 
-    {name	: "COM1 (25 kHz)", 
-    aa_short: ["adjust", ["COM1 (25 kHz) stdby %.3f MHz", "/instrumentation/comm[0]/frequencies/standby-mhz", -0.025, 118, 136.975]],
-    bb_short: ["adjust", ["COM1 (25 kHz) stdby %.3f MHz", "/instrumentation/comm[0]/frequencies/standby-mhz", 0.025, 118, 136.975]],
-    cc_short: ["script", ["", func {
-        var fSel = getprop("/instrumentation/comm[0]/frequencies/selected-mhz"); 
-        var fstb = getprop("/instrumentation/comm[0]/frequencies/standby-mhz"); 
-        setprop("/instrumentation/comm[0]/frequencies/selected-mhz", fstb);
-        setprop("/instrumentation/comm[0]/frequencies/standby-mhz", fSel);
-        freqDispCOM1();}]],
-    cc_long: ["script", ["", func {
-        freqDispCOM1();}]],
+    {name	: "COM1 (25 kHz)\n%.3f MHz standby\n%.3f MHz selected", 
+    prop	   : ["/instrumentation/comm[0]/frequencies/standby-mhz", 
+               "/instrumentation/comm[0]/frequencies/selected-mhz"],
+    aa_short: ["adjust", [-0.025, 118, 136.975]],
+    bb_short: ["adjust", [0.025, 118, 136.975]],
+    cc_short: ["swap",],
+    cc_long : ["popup"],
     }, 
-    {name	: "COM2 (1 MHz)", 
-    aa_short: ["adjust", ["COM2 (1 MHz) stdby %.3f MHz", "/instrumentation/comm[1]/frequencies/standby-mhz", -1, 118, 136.975]],
-    bb_short: ["adjust", ["COM2 (1 MHz) stdby %.3f MHz", "/instrumentation/comm[1]/frequencies/standby-mhz", 1, 118, 136.975]],
-    cc_short: ["script", ["", func {
-        var fSel = getprop("/instrumentation/comm[1]/frequencies/selected-mhz"); 
-        var fstb = getprop("/instrumentation/comm[1]/frequencies/standby-mhz"); 
-        setprop("/instrumentation/comm[1]/frequencies/selected-mhz", fstb);
-        setprop("/instrumentation/comm[1]/frequencies/standby-mhz", fSel);
-        freqDispCOM2();}]],
-    cc_long: ["script", ["", func {
-        freqDispCOM2();}]],
+    {name	: "COM2 (1 MHz)\n%.3f MHz standby\n%.3f MHz selected", 
+    prop	   : ["/instrumentation/comm[1]/frequencies/standby-mhz", 
+               "/instrumentation/comm[1]/frequencies/selected-mhz"],
+    aa_short: ["adjust", [-1, 118, 136.975]],
+    bb_short: ["adjust", [1, 118, 136.975]],
+    cc_short: ["swap",],
+    cc_long : ["popup"],
     }, 
-    {name	: "COM2 (25 kHz)", 
-    aa_short: ["adjust", ["COM2 (25 kHz) stdby %.3f MHz", "/instrumentation/comm[1]/frequencies/standby-mhz", -0.025, 118, 136.975]],
-    bb_short: ["adjust", ["COM2 (25 kHz) stdby %.3f MHz", "/instrumentation/comm[1]/frequencies/standby-mhz", 0.025, 118, 136.975]],
-    cc_short: ["script", ["", func {
-        var fSel = getprop("/instrumentation/comm[1]/frequencies/selected-mhz"); 
-        var fstb = getprop("/instrumentation/comm[1]/frequencies/standby-mhz"); 
-        setprop("/instrumentation/comm[1]/frequencies/selected-mhz", fstb);
-        setprop("/instrumentation/comm[1]/frequencies/standby-mhz", fSel);
-        freqDispCOM2();}]],
-    cc_long: ["script", ["", func {
-        freqDispCOM2();}]],
+    {name	: "COM2 (25 kHz)\n%.3f MHz standby\n%.3f MHz selected", 
+    prop	   : ["/instrumentation/comm[1]/frequencies/standby-mhz", 
+               "/instrumentation/comm[1]/frequencies/selected-mhz"],
+    aa_short: ["adjust", [-0.025, 118, 136.975]],
+    bb_short: ["adjust", [0.025, 118, 136.975]],
+    cc_short: ["swap",],
+    cc_long : ["popup"],
     }, 
-    {name	: "NAV1 (1 MHz)", 
-    aa_short: ["adjust", ["NAV1 (1 MHz) stdby %.3f MHz", "/instrumentation/nav[0]/frequencies/standby-mhz", -1, 108, 117.95]],
-    bb_short: ["adjust", ["NAV1 (1 MHz) stdby %.3f MHz", "/instrumentation/nav[0]/frequencies/standby-mhz", 1, 108, 117.95]],
-    cc_short: ["script", ["", func {
-        var fSel = getprop("/instrumentation/nav[0]/frequencies/selected-mhz"); 
-        var fstb = getprop("/instrumentation/nav[0]/frequencies/standby-mhz"); 
-        setprop("/instrumentation/nav[0]/frequencies/selected-mhz", fstb);
-        setprop("/instrumentation/nav[0]/frequencies/standby-mhz", fSel);
-        freqDispNAV1();}]],
-    cc_long: ["script", ["", func {
-        freqDispNAV1();}]],
+    {name	: "NAV1 (1 MHz)\n%.3f MHz standby\n%.3f MHz selected\nradial %u deg", 
+    prop	   : ["/instrumentation/nav[0]/frequencies/standby-mhz", 
+               "/instrumentation/nav[0]/frequencies/selected-mhz",
+               "/instrumentation/nav[0]/radials/selected-deg"],
+    aa_short: ["adjust", [-1, 108, 117.95]],
+    bb_short: ["adjust", [1, 108, 117.95]],
+    cc_short: ["swap",],
+    cc_long : ["popup"],
     }, 
-    {name	: "NAV1 (50 kHz)", 
-    aa_short: ["adjust", ["NAV1 (50 kHz) stdby %.3f MHz", "/instrumentation/nav[0]/frequencies/standby-mhz", -0.05, 108, 117.95]],
-    bb_short: ["adjust", ["NAV1 (50 kHz) stdby %.3f MHz", "/instrumentation/nav[0]/frequencies/standby-mhz", 0.05, 108, 117.95]],
-    cc_short: ["script", ["", func {
-        var fSel = getprop("/instrumentation/nav[0]/frequencies/selected-mhz"); 
-        var fstb = getprop("/instrumentation/nav[0]/frequencies/standby-mhz"); 
-        setprop("/instrumentation/nav[0]/frequencies/selected-mhz", fstb);
-        setprop("/instrumentation/nav[0]/frequencies/standby-mhz", fSel);
-        freqDispNAV1();}]],
-    cc_long: ["script", ["", func {
-        freqDispNAV1();}]],
+    {name	: "NAV1 (50 kHz)\n%.3f MHz standby\n%.3f MHz selected\nradial %u deg", 
+    prop	   : ["/instrumentation/nav[0]/frequencies/standby-mhz", 
+               "/instrumentation/nav[0]/frequencies/selected-mhz",
+               "/instrumentation/nav[0]/radials/selected-deg"],
+    aa_short: ["adjust", [-0.05, 108, 117.95]],
+    bb_short: ["adjust", [0.05, 108, 117.95]],
+    cc_short: ["swap",],
+    cc_long : ["popup"],
     }, 
-    {name	: "NAV1 radial", 
-    aa_short: ["adjust", ["NAV1 radial %u deg", "/instrumentation/nav[0]/radials/selected-deg", -1, 0, 359, 1]],
-    bb_short: ["adjust", ["NAV1 radial %u deg", "/instrumentation/nav[0]/radials/selected-deg", 1, 0, 359, 1]],
-    cc_long: ["script", ["", func {
-        freqDispNAV1();}]],
+    {name	: "NAV1 radial %u deg", 
+    prop	   : "/instrumentation/nav[0]/radials/selected-deg",
+    aa_short: ["adjust", [-1, 0, 359, 1]],
+    bb_short: ["adjust", [1, 0, 359, 1]],
+    cc_long : ["popup"],
     }, 
-    {name	: "NAV2 (1 MHz)", 
-    aa_short: ["adjust", ["NAV2 (1 MHz) stdby %.3f MHz", "/instrumentation/nav[1]/frequencies/standby-mhz", -1, 108, 117.95]],
-    bb_short: ["adjust", ["NAV2 (1 MHz) stdby %.3f MHz", "/instrumentation/nav[1]/frequencies/standby-mhz", 1, 108, 117.95]],
-    cc_short: ["script", ["", func {
-        var fSel = getprop("/instrumentation/nav[1]/frequencies/selected-mhz"); 
-        var fstb = getprop("/instrumentation/nav[1]/frequencies/standby-mhz"); 
-        setprop("/instrumentation/nav[1]/frequencies/selected-mhz", fstb);
-        setprop("/instrumentation/nav[1]/frequencies/standby-mhz", fSel);
-        freqDispNAV2();}]],
-    cc_long: ["script", ["", func {
-        freqDispNAV2();}]],
+
+    {name	: "NAV2 (1 MHz)\n%.3f MHz standby\n%.3f MHz selected\nradial %u deg", 
+    prop	   : ["/instrumentation/nav[1]/frequencies/standby-mhz", 
+               "/instrumentation/nav[1]/frequencies/selected-mhz",
+               "/instrumentation/nav[1]/radials/selected-deg"],
+    aa_short: ["adjust", [-1, 108, 117.95]],
+    bb_short: ["adjust", [1, 108, 117.95]],
+    cc_short: ["swap",],
+    cc_long : ["popup"],
     }, 
-    {name	: "NAV2 (50 kHz)", 
-    aa_short: ["adjust", ["NAV2 (50 kHz) stdby %.3f MHz", "/instrumentation/nav[1]/frequencies/standby-mhz", -0.05, 108, 117.95]],
-    bb_short: ["adjust", ["NAV2 (50 kHz) stdby %.3f MHz", "/instrumentation/nav[1]/frequencies/standby-mhz", 0.05, 108, 117.95]],
-    cc_short: ["script", ["", func {
-        var fSel = getprop("/instrumentation/nav[1]/frequencies/selected-mhz"); 
-        var fstb = getprop("/instrumentation/nav[1]/frequencies/standby-mhz"); 
-        setprop("/instrumentation/nav[1]/frequencies/selected-mhz", fstb);
-        setprop("/instrumentation/nav[1]/frequencies/standby-mhz", fSel);
-        freqDispNAV2();}]],
-    cc_long: ["script", ["", func {
-        freqDispNAV2();}]],
+    {name	: "NAV2 (50 kHz)\n%.3f MHz standby\n%.3f MHz selected\nradial %u deg", 
+    prop	   : ["/instrumentation/nav[1]/frequencies/standby-mhz", 
+               "/instrumentation/nav[1]/frequencies/selected-mhz",
+               "/instrumentation/nav[1]/radials/selected-deg"],
+    aa_short: ["adjust", [-0.05, 108, 117.95]],
+    bb_short: ["adjust", [0.05, 108, 117.95]],
+    cc_short: ["swap",],
+    cc_long : ["popup"],
     }, 
-    {name	: "NAV2 radial", 
-    aa_short: ["adjust", ["NAV2 radial %u deg", "/instrumentation/nav[1]/radials/selected-deg", -1, 0, 359, 1]],
-    bb_short: ["adjust", ["NAV2 radial %u deg", "/instrumentation/nav[1]/radials/selected-deg", 1, 0, 359, 1]],
-    cc_long: ["script", ["", func {
-        freqDispNAV2();}]],
+    {name	: "NAV2 radial %u deg", 
+    prop	   : "/instrumentation/nav[1]/radials/selected-deg",
+    aa_short: ["adjust", [-1, 0, 359, 1]],
+    bb_short: ["adjust", [1, 0, 359, 1]],
+    cc_long : ["popup"],
     }, 
-    {name	: "ADF (10 kHz)", 
-    aa_short: ["adjust", ["ADF (10 kHz) stdby %u kHz", "/instrumentation/adf/frequencies/standby-khz", -10, 190, 1750]],
-    bb_short: ["adjust", ["ADF (10 kHz) stdby %u kHz", "/instrumentation/adf/frequencies/standby-khz", 10, 190, 1750]],
-    cc_short: ["script", ["", func {
-        var fSel = getprop("/instrumentation/adf/frequencies/selected-khz"); 
-        var fstb = getprop("/instrumentation/adf/frequencies/standby-khz"); 
-        setprop("/instrumentation/adf/frequencies/selected-khz", fstb);
-        setprop("/instrumentation/adf/frequencies/standby-khz", fSel);
-        freqDispADF();}]],
-    cc_long: ["script", ["", func {
-        freqDispADF();}]],
+    {name	: "ADF (10 kHz)\n%u kHz standby\n%u kHz selected\nradial %u deg", 
+    prop	   : ["/instrumentation/adf/frequencies/standby-khz", 
+               "/instrumentation/adf/frequencies/selected-khz",
+               "/instrumentation/adf/rotation-deg"],
+    aa_short: ["adjust", [-10, 190, 1750]],
+    bb_short: ["adjust", [10, 190, 1750]],
+    cc_short: ["swap",],
+    cc_long : ["popup"],
     }, 
-    {name	: "ADF (1 kHz)", 
-    aa_short: ["adjust", ["ADF (10 kHz) stdby %u kHz", "/instrumentation/adf/frequencies/standby-khz", -1, 190, 1750]],
-    bb_short: ["adjust", ["ADF (10 kHz) stdby %u kHz", "/instrumentation/adf/frequencies/standby-khz", 1, 190, 1750]],
-    cc_short: ["script", ["", func {
-        var fSel = getprop("/instrumentation/adf/frequencies/selected-khz"); 
-        var fstb = getprop("/instrumentation/adf/frequencies/standby-khz"); 
-        setprop("/instrumentation/adf/frequencies/selected-khz", fstb);
-        setprop("/instrumentation/adf/frequencies/standby-khz", fSel);
-        freqDispADF();}]],
-    cc_long: ["script", ["", func {
-        freqDispADF();}]],
+    {name	: "ADF (1 kHz)\n%u kHz standby\n%u kHz selected\nradial %u deg", 
+    prop	   : ["/instrumentation/adf/frequencies/standby-khz", 
+               "/instrumentation/adf/frequencies/selected-khz",
+               "/instrumentation/adf/rotation-deg"],
+    aa_short: ["adjust", [-1, 190, 1750]],
+    bb_short: ["adjust", [1, 190, 1750]],
+    cc_short: ["swap",],
+    cc_long : ["popup"],
     }, 
-    {name	: "ADF radial", 
-    aa_short: ["adjust", ["ADF radial %u deg", "/instrumentation/adf/rotation-deg", -1, 0, 359, 1]],
-    bb_short: ["adjust", ["ADF radial %u deg", "/instrumentation/adf/rotation-deg", 1, 0, 359, 1]],
-    cc_long: ["script", ["", func {
-        freqDispADF();}]],
+    {name	: "ADF radial %u deg", 
+    prop	   : "/instrumentation/adf/rotation-deg",
+    aa_short: ["adjust", [-1, 0, 359, 1]],
+    bb_short: ["adjust", [1, 0, 359, 1]],
+    cc_long : ["popup"],
     }, 
-    {name	: "DME", 
-    cc_long: ["script", ["", func {
-        freqDispDME();}]],
+    {name	: "DME\n%.3f MHz selected", 
+    prop	   : "/instrumentation/dme/frequencies/selected-mhz",
+    cc_long : ["popup"],
     }, 
     ];
 

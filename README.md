@@ -72,7 +72,8 @@ Each group of hid controls must be identified by a string element in the hidCtrl
 
     var hidCtrls = ["EN1", "EN2", "SW12"];
 
-For each string element in the hidCtrls vector there must be defined a "buttons" entry and an "items" entry. E.g. for "EN2":  
+For each string element in the hidCtrls vector there must be defined a "buttons" entry (a hash) and an "items" entry (a vector). Example for "EN2" follows.  
+The "buttons" entry maps hid switch number(s) to button identifier letter(s):  
 
     var EN2buttons = {
         28: "aa",
@@ -80,52 +81,102 @@ For each string element in the hidCtrls vector there must be defined a "buttons"
         31: "cc",
         };
 
-    var EN2items = ["NavLights"];
+The "items" entry lists groups of sim/cockpit controls:  
 
-Finally, for each element in the "items" vector must be defined one or several event/action pairs. In this example there is only the "NavLights":  
+    var EN2items = ["NavLights"];  
+
+Finally, for each element in the "items" vector must be defined a vector of cockpit/sim items (hash(es)) containing:
+
+- name: string with the name of the element
+
+- one or several event/action pairs
+
+Optionally, property path(s) can be defined:
+
+- prop: property path(s) as string or vector of strings  
+
+
+In this example there is only the item "NavLights" with two cockpit items:  
 
     var NavLights = [
         {name	: "L landing light", 
-        cc_short: ["toggle", ["/controls/lighting/landing-lights"]],
+        cc_short: ["toggle", ["Left landing light", "/controls/lighting/landing-lights"]],
         }, 
         {name	: "R landing light", 
-        cc_short: ["toggle", ["/controls/lighting/taxi-light"]],
+        cc_short: ["toggle", ["Right landing light", "/controls/lighting/taxi-light"]],
         }, 
         ];
 
-
 Event/action pairs
 ------------------
-An event/action pair is described as a hash with a name key and one or several 
-event keys, e.g.:  
+An event/action pair is described as a key/value pair with an event as the
+key and the value is a vector with an action and its parameters (in a vector), 
+e.g.:  
 
-    {name	: "L landing light", 
-    cc_short: ["toggle", ["/controls/lighting/landing-lights"]],
-    }, 
+    event: ["action", ["popup", "target", . . ]]
+                       -- action parameters --
+                       
+            "popup"     string that will be displayed in sim as a popup 
+                        message after the action was performed. 
         
-The action part is a vector with the format:  
+            "target"   the target property path. Can also be a vector of
+                       property paths. The property value(s) may be 
+                       displayed in the popup message. 
+        
+Both "popup" and "target" may be omitted from the action parameters.  
+If "popup" is omitted, the name string is used for the message.  
+If "target" is omitted, the first property path(s) of prop will be used 
+as target for the action.
 
-    ["action", [action params]]
+The examples below are all valid event/action pairs:
+
+    cc_short: ["toggle", ["Left landing light ", "/controls/lighting/landing-lights"]]
+        
+    cc_short: ["toggle", ["/controls/lighting/landing-lights"]]
+        
+    cc_short: ["toggle", ["Left landing light "]]
+        
+    cc_short: ["toggle", []]
+        
+    cc_short: ["toggle"]
+        
+The last three requires that prop was defined:  
+
+    prop    : "/controls/lighting/landing-lights"  
     
-The action params vector may (optional) have a message string as the first 
-element, which will be displayed in sim as a popup message after the action 
-was performed.
 
-There are three actions available:  
+Actions
+-------
+There are five actions available:  
 
-    "toggle"    toggle a property. 
-    Parameter: property path.
+    "popup"     Display a popup message in sim.
+    Parameters: "popup", "target"
 
-    "adjust"    adjust a property within min max bounds. 
-    Parameters: property path and, optionally, step, minval, maxval and wrap(around).  
-                If not given the defaults are 1, 0, 1, 0.  
+    "toggle"    Toggle a property. 
+                Display a popup message in sim.
+    Parameters: "popup", "target"
+
+    "swap"      Swap the values of two properties. 
+                Display a popup message in sim.
+    Parameters: "popup", vector of "target"(s)
+
+    "adjust"    Adjust a property value within min max bounds. 
+                Wrap around the value or just keep it within bounds.
+                Display a popup message in sim.
+    Parameters: "popup", "target", step, minval, maxval, wrap 
+                 Defaults for the last four parameters are 1, 0, 1, 0.  
     
 With proper values for step, minval and maxval, adjust can be used to 
     increase/decrease a property value, set a property to a specific value, 
     and even act as a multi postition rotary (e.g. tank selector or magnetos switch). 
 
-    "script"    run script.  
-    Parameter: function (script) to run.  
+    "script"    Run script.  
+                Display a popup message in sim.
+    Parameters: "popup", "target", function 
+                function is a nasal script to run.  
+                
+The in sim popup message can be suppressed by providing an empty string ("") as popup. 
+                
 
 
 Reserved (already in use) events
@@ -155,7 +206,7 @@ The popup message
 -----------------
 A popup message is displayed in sim after selecting an item. The items name string is used for the message.
 
-A popup message may be displayed in sin after performing an action. The message is composed according to the following rules.
+A popup message may be displayed in sinm after performing an action. The message is composed according to the following rules.
 
 When no message string is given in the params vector:  
 

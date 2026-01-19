@@ -12,7 +12,7 @@
 # You should have received a copy of the GNU General Public License along    #
 # with this program. If not, see <https://www.gnu.org/licenses/>.            #
 ##############################################################################
-
+var cdmuxbanner = '*** cdmux ***';
 print('*** cdmux *** : loading cdmux');
 
 var duration = 2.5; # popup duration
@@ -74,6 +74,7 @@ var load_into = func (hash, nasfile) {
 #
 
 var showPopup = func(str, fmt=nil, props=nil) {
+# TODO revise the order of tests and string handling
 # Show popup
     if (false) { # true: debug
         print("str: ", str);
@@ -95,47 +96,91 @@ var showPopup = func(str, fmt=nil, props=nil) {
             str = str[getprop(prop)];
             }
         if (s!=nil) {str = s ~ ": " ~ str;} # prepend the label
-        
+
+# Move this testcase to 1st position        
         if (prop==nil) {
             # no property given, just print string
             gui.popupTip(str, duration);
             return;
             }
+            
         if (string.match(str, "*%*")) {
             # string has format specification print string and property value
-            gui.popupTip(sprintf(str, getprop(prop)), duration);
+            if (isvec(props)) {
+                var pars = [];
+                var t = 0;
+                append(pars, str);
+                forindex(var i; props) {
+                    t = getprop(props[i]);
+                    # check that prop exists
+                    if (t!= nil) {append(pars, t);}
+                    else {gui.popupTip(props[i]~"\ndoes not exist or value is NaN", duration);
+                        return;}
+                    }
+                var str = call(sprintf, pars);
+                # debug.dump(str);
+                gui.popupTip(str, duration);
+                }
+            else {gui.popupTip(sprintf(str, getprop(prop)), duration);}
             return;
             }
+            
         if (string.match(str, "* ")) {
             # string ends with space: add format and print string and property value
             if (fmt==nil) {fmt = "%u";}
 			   gui.popupTip(sprintf(str~fmt, getprop(prop)), duration);
             return;
 			   }
+			   
          # string does not end with a space: print string
          gui.popupTip(str, duration);
         }
     }
 
-var script = func(popup, function) {
-# Run a script
-    var f = function;
-    call(f, nil, nil, nil, var err = []);
-	 if (size(err)) { 			# check err
-	     debug.dump(err);
-	     print('. . when "', popup, '". See demux scriptfile');
+var popup = func(str, props=nil) {
+# Wrapper for showPopup
+    showPopup(str, nil, props);
+    return 1; # Task is completed regardless wether a property was toggled or not
+    }
+
+var toggle = func(popup, props) {
+# Toggle a property
+    var prop = isvec(props) ? props[0] : props;
+    var t = getprop(prop);
+    if(t != nil) {setprop(prop, math.mod(t += 1, 2))}
+    else {
+        popup = prop~"\ndoes not exist or value is NaN";
 	     }
-	 else {
-        showPopup(popup);
-	     }
-    return 1; # Task is completed regardless wether the script was successful or not
+    showPopup(popup, "%u", props);
+    return 1; # Task is completed regardless wether a property was toggled or not
+    }
+
+var swap = func(popup, props) {
+# Swap the values of two properties
+    if (isvec(props) and size(props)>1) {
+        var val0 = getprop(props[0]); 
+        var val1 = getprop(props[1]); 
+        if (val0 != nil and val1 != nil) {
+            # swap values
+            setprop(props[0], val1);
+            setprop(props[1], val0);
+            }
+        else { # popup error message
+            popup = props[0]~"\n"~props[1]~"\ndoes not exist or value is NaN";
+            }
+        }
+    else { # popup error message
+        var popup = "swap action needs two properties to act on";
+        }
+    showPopup(popup, nil, props);
+    return 1; # Task is completed regardless wether a property was toggled or not
     }
 
 var adjust = func(popup, props, step=1, min=0, max=1, wrap=0) {
 # Adjust a property within bounds
     var prop = isvec(props) ? props[0] : props;
     var t = getprop(prop);
-    if (t != nil ) {
+    if (t != nil) {
         t += step;
         if (wrap) {
             if (t < min) {t = max;}
@@ -154,16 +199,18 @@ var adjust = func(popup, props, step=1, min=0, max=1, wrap=0) {
     return 1; # Task is completed regardless wether a property was changed or not
     }
 
-var toggle = func(popup, props) {
-# Toggle a property
-    var prop = isvec(props) ? props[0] : props;
-    var t = getprop(prop);
-    if(t != nil ) {setprop(prop, math.mod(t += 1, 2))}
-    else {
-        popup = prop~"\ndoes not exist or value is NaN";
+var script = func(popup, prop, function) {
+# Run a script
+    var f = function;
+    call(f, nil, nil, nil, var err = []);
+	 if (size(err)) { 			# check err
+	     debug.dump(err);
+	     print('. . when "', popup, '". See demux scriptfile');
 	     }
-    showPopup(popup, "%u", props);
-    return 1; # Task is completed regardless wether a property was toggled or not
+	 else {
+        showPopup(popup, nil, prop);
+	     }
+    return 1; # Task is completed regardless wether the script was successful or not
     }
 
 ##
@@ -372,87 +419,150 @@ var load_dmx_config = func (hid) {
                 simControlGroup.cc_down = [simControlGroup.set_skip, [1]];
                 simControlGroup.cc_up = [simControlGroup.set_skip, [0]];
 
-                # Load event/action pairs of the group
+                # Load "name", "prop" and event/action pairs of each group
                 if (!existNonEmpty(dmxconf[hidCtrlItems[j]], "vector")) {
                 print('*** cdmux *** : Can not load item from ', hidCtrlItems[j], '. Check ', dmxfile);
                 continue;}
                 
                 simControlGroup.items = dmxconf[hidCtrlItems[j]];
+                # Loop over control groups
                 forindex(var k; simControlGroup.items) {
+                    # Loop over control group keys
                     foreach(var key; keys(simControlGroup.items[k])) {
                         var act = simControlGroup.items[k][key];
+                        
+                        # remove unknown keys
+                        if (!(string.match(key, "*_down") 
+                           or string.match(key, "*_up") 
+                           or string.match(key, "*_short") 
+                           or string.match(key, "*_long") 
+                           or key == "name"
+                           or key == "prop")) {
+                            # Error message
+                            print('*** cdmux *** : key "', key, '" in ', 
+                                   simControlGroup.name, ' group is not valid');
+                            delete(simControlGroup.items[k], key);
+                            continue;
+                            }
+                            
+                        # process event keys
                         if (key != "name" and key != "prop") {
-									####################
-######################################################################
-                            # When popup string is missing, prepend the item name 
-                            # as popup string to the parameter vector
+                            # Check and complete the action parameter vector 
+                            # with respect to popup string and property path(s).
                             var db = 0; # 1: debug
                             
                             if (size(act) > 1) {
-										 if (db) {print("act > 1");}
-										 if (db) {debug.dump(act);}
+									 # Action vector has both action string and action parameters
+                                if (db) {print("act > 1");}
+                                if (db) {debug.dump(act);}
+                                
                                 var pars = act[1];
-                                act[1] = []; 
-										 if (db) {debug.dump(act);}
-										 }
+                                act[1] = []; # start building the action parameter vector
+                                
+                                if (db) {debug.dump(act);}
+                                }
                             else {
-										 if (db) {print("act < 2");}
+                                # Action vector has only the action string
+                                if (db) {print("act < 2");}
+                                if (db) {debug.dump(act);}
+										 
                                 var pars = [];
-										 if (db) {debug.dump(act);}
-                                append(act, []);
-										 if (db) {debug.dump(act);}
+                                append(act, []);  # start building the action parameter vector
+                                
+                                if (db) {debug.dump(act);}
                                 }
                                 
-								    if (db) {debug.dump(act);}
-										 
+                            # If popup string is missing, insert the item name 
+                            # string as popup message into the parameter vector.
                             var m = 0;
                             # pars has at least on item and item is popup string
                             if (size(pars) > m and isstr(pars[m]) and !string.match(pars[m], "*/*")) {
 										  if (db) {print("1 m = ", m);}
                                 if (db) {debug.dump(act[1]);}
+                                
                                 append(act[1], pars[m]);
-                                if (db) {debug.dump(act[1]);}
                                 m += 1;
+                                
+                                if (db) {debug.dump(act[1]);}
 										  if (db) {print("2 m = ", m);}
                                 }
                             else {
                                 append(act[1], simControlGroup.items[k]["name"]);
+                                
 										  if (db) {print("3 m = ", m);}
                                 if (db) {debug.dump(act[1]);}
                                 }
                             
+                            # If property path (target) is missing insert (if available)
+                            # the item prop value.
+                            #
                             # pars has a next item and item is prop
+                            # NOTE: the logic here will fail if target was omitted AND 
+                            # par is a string containing a "/".
                             if (size(pars) > m) {var par = isvec(pars[m]) ? pars[m][0] : pars[m];}
                             if (size(pars) > m and isstr(par) and string.match(par, "*/*")) {
  										  if (db) {print("4 m = ", m);}
+ 										  
                                 append(act[1], pars[m]);
-                                if (db) {debug.dump(act[1]);}
                                 m += 1;
+                                
+                                if (db) {debug.dump(act[1]);}
 										  if (db) {print("5 m = ", m);}
                                 }
-                            else if (act[0] != "script") {
-                                # test that "prop" exist
+                            else {
 										  if (db) {print("6 m = ", m);}
-                                append(act[1], simControlGroup.items[k]["prop"]);
+                                # test that "prop" exist                                
+                                if (contains(simControlGroup.items[k], "prop")){
+                                    if (db) {print("7 m = ", m);}
+                                    
+                                    append(act[1], simControlGroup.items[k]["prop"]);
+                                    
+                                    if (db) {debug.dump(act[1]);}
+                                    if (db) {print("8 m = ", m);}
+                                    }
+                                else if (act[0] == "popup" or act[0] == "script") {
+                                    if (db) {print("9 m = ", m);}
+                                    
+                                    append(act[1], nil);
+                                    
+                                    if (db) {debug.dump(act[1]);}
+                                    if (db) {print("10 m = ", m);}
+                                    }
+                                else {
+                                    # Error message
+                                    print('*** cdmux *** : key "prop" is needed for the event ', key, 
+                                    ' in "', simControlGroup.items[k]["name"], 
+                                    '" in ', simControlGroup.name, ' group');
+                                    delete(simControlGroup.items[k], key);
+                                    continue;
+                                    }
+                                    
+										  if (db) {print("6 m = ", m);}
+                                
                                 if (db) {debug.dump(act[1]);}
 										  if (db) {print("7 m = ", m);}
                                 }
                             
+                            # Copy the rest of the parameters.
                             while (size(pars) > m ) {
                                 append(act[1], pars[m]);
                                 if (db) {debug.dump(act[1]);}
                                 m += 1;
                                 }
 
-                            if (act[0] == "toggle") {
+                            # Replace the action labels with the corresponding functions
+                            if (act[0]      == "toggle") {
                                 act[0] = toggle}
                             else if (act[0] == "adjust") {
                                 act[0] = adjust}
                             else if (act[0] == "script") {
-										  act[0] = script}
-
+                                act[0] = script}
+                            else if (act[0] == "popup") {
+                                act[0] = popup}
+                            else if (act[0] == "swap") {
+                                act[0] = swap}
+    
                             if (db) {debug.dump(act[1]);}
-                            
                             }
                         }
                     }
