@@ -18,7 +18,7 @@ Each group of buttons/switches is setup with its own demultiplexer which can han
 
 The demultiplexer is configured with actions for selecting one of several groups, and selecting one of several sim/cockpit controls within the group. 
 
-Each event from the group of switches is passed to the demultiplexer identified by the name of the group (e.g. 'EN1' for encoder one). The event is checked against actions for selecting group, actions for selecting sim/cockpit control within the group and actions for the selected sim/cockpit control. If the event matches, the action is performed, a corresponding message (optional) is printed as a pop up in the simulator window and search for (further) matches is terminated. Thus any event can only trigger one action.
+Each event from the group of switches is passed to the demultiplexer identified by the name of the group (e.g. 'EN1' for encoder one). The event is checked against actions for selecting group, actions for selecting sim/cockpit control within the group and actions for the selected sim/cockpit control. If the event matches, the action is performed, a corresponding message is displayed as a pop up in the simulator window and search for (further) matches is terminated. Any event can only trigger one action.
 
 
 Setting up the demultiplexer
