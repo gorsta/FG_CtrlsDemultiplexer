@@ -28,7 +28,7 @@ print("Loading dc-3 S-TECS_STEM dmux");
 # Groups of buttons to use with the demultipleser
 #
 var hidCtrls = ["EN1", "EN2", "SW12"];
-#var hidCtrls = ["EN1"];
+#var hidCtrls = ["EN2"];
 
 ##
 # Button connections
@@ -58,10 +58,10 @@ var SW12buttons = {
 # Groups of sim/cockpit controls for the demultiplexer
 #
 var EN1items = ["FltInstr", "Autopilot"];
-#var EN1items = ["FltInstr"];
+# var EN1items = ["FltInstr"];
 
 var EN2items = ["NavLights", "Radio"];
-#var EN2items = ["Radio"];
+#var EN2items = ["NavLights"];
 
 var SW12items = ["EngCtrls"];
 
@@ -70,28 +70,38 @@ var SW12items = ["EngCtrls"];
 #
 
 
-var FltInstr = [ 
+var xFltInstr = [ 
     {name	: "ALTimeter: %.2f inHg", 
     prop	   : "instrumentation/altimeter/setting-inhg", 
     aa_short: ["adjust", [-0.02, 27.5, 31]],
     bb_short: ["adjust", [0.02, 27.5, 31]],
     cc_long : ["popup"],
     }, 
+    ];
+
+var FltInstr = [ 
+    {name	: "ALTimeter: %.2f inHg", 
+    prop	   : "/instrumentation/altimeter/setting-inhg", 
+    aa_short: ["adjust", [-0.02, 27.5, 31]],
+    bb_short: ["adjust", [0.02, 27.5, 31]],
+    cc_long : ["popup"],
+    }, 
     {name	: "ALTimeter: %.1f hPa", 
-    prop	   : "instrumentation/altimeter/setting-hpa", 
+    prop	   : "/instrumentation/altimeter/setting-hpa", 
     aa_short: ["adjust", [-0.5, 931, 1050]],
     bb_short: ["adjust", [0.5, 931, 1050]],
     cc_long : ["popup"],
     }, 
     {name	: "Instr light", 
-    prop	   : "controls/lighting/instruments-norm", 
+    prop	   : "/controls/lighting/instruments-norm", 
     aa_short: ["adjust", ["Dec instr light", -0.02, 0, 0.16]],
     bb_short: ["adjust", ["Inc instr light", 0.02, 0, 0.16]],
     cc_long : ["popup"],
     }, 
     {name	: "Compass light:off;on", 
-    prop	   : "controls/lighting/compass-lights", 
+    prop	   : "/controls/lighting/compass-lights", 
     aa_short: ["adjust", [-1]],
+    aaa_short: ["adjust", [-1]],
     bb_short: ["adjust", [1]],
     cc_long : ["popup"],
     }, 
@@ -108,7 +118,7 @@ var FltInstr = [
 #
 var Autopilot = [ 
     {name	: "AP altitude\n%u feet set\n%s", 
-    prop	   : ["autopilot/settings/target-altitude-ft", 
+    prop	   : ["/autopilot/settings/target-altitude-ft", 
                "/autopilot/locks/altitude"],
     aa_short: ["adjust", [-50, 1000, 20000]],
     bb_short: ["adjust", [50, 1000, 20000]],
@@ -124,7 +134,7 @@ var Autopilot = [
     cc_long : ["popup"],
     }, 
     {name	: "AP heading\n%u deg set\n%s", 
-    prop	   : ["autopilot/settings/heading-bug-deg", 
+    prop	   : ["/autopilot/settings/heading-bug-deg", 
                "/autopilot/locks/heading"],
     aa_short: ["adjust", [-1, 0, 359, 1]],
     bb_short: ["adjust", [1, 0, 359, 1]],
@@ -140,10 +150,10 @@ var Autopilot = [
     cc_long : ["popup"],
     }, 
     {name	: "AP speed\n%u kt set\n%s", 
-    prop	   : ["autopilot/settings/target-speed-kt", 
+    prop	   : ["/autopilot/settings/target-speed-kt", 
                "/autopilot/locks/speed"],
-    aa_short: ["adjust", ["Target speed ", "autopilot/settings/target-speed-kt", -5, 110, 140]],
-    bb_short: ["adjust", ["Target speed ", "autopilot/settings/target-speed-kt", 5, 110, 140]],
+    aa_short: ["adjust", ["Target speed ", "/autopilot/settings/target-speed-kt", -5, 110, 140]],
+    bb_short: ["adjust", ["Target speed ", "/autopilot/settings/target-speed-kt", 5, 110, 140]],
     cc_short: ["script", ["", func {var node = props.globals.getNode("/autopilot/locks/speed", 1); 
         if (node.getValue() != nil) {
         if ( node.getValue() == "speed-with-throttle") {

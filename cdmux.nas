@@ -26,7 +26,7 @@ var del2 = ":"; # label delimiter
 # DO NOT USE:
 # var del3 = "/"; # delimiter
 # '/' must not be used in a popup message string! It is already reserved and 
-# in use as the identifying characteristic of a proprty path.
+# in use as the identifying characteristic of a property path string.
 
 var fghome = getprop("/sim/fg-home");
 var matchingpatternsfile = "dmuxmatchmodel.nas";
@@ -83,14 +83,7 @@ var load_into = func (hash, nasfile) {
 var showPopup = func(str, fmt=nil, props=nil) {
 # TODO revise the order of tests and string handling
 # Show popup
-# Move this testcase to 1st position        
-        if (prop==nil) {
-            # no property given, just print string
-            gui.popupTip(str, duration);
-            return;
-            }
-            
-    if (false) { # true: debug
+    if (0) { # true: debug
         print("str: ", str);
         print("fmt: ", fmt);
         debug.dump(props);}
@@ -107,11 +100,23 @@ var showPopup = func(str, fmt=nil, props=nil) {
         if (string.match(str, "*" ~ del ~ "*")) {
 			   # String contains substrings. Pick the relevant one.
             str = split(del, str);
-            str = str[getprop(prop)];
+            if (prop != nil and isint(getprop(prop))) {
+                str = str[getprop(prop)]; # FIXME?: Check that index is int
+                }
+             else {
+                 str = "property value int expected. Check property path"
+                 }
             }
         if (s!=nil) {str = s ~ ": " ~ str;} # prepend the label
 
 # Move this testcase to 1st position        
+# Move this testcase to 1st position        
+        if (prop==nil) {
+            # no property given, just print string
+            gui.popupTip(str, duration);
+            return;
+            }
+            
 # Move this testcase to 1st position        
         if (string.match(str, "*%*")) {
             # string has format specification print string and property value
@@ -302,7 +307,7 @@ foreach (var pattern; patterns.aircrafts) {
 	 
 ##
 # Load demultiplexer setup
-# Read from dmxconf and loads controlgroups and actions.
+# Read from dmxconf and load controlgroups and actions.
 #
 var dmxconf = {};
 
@@ -338,7 +343,7 @@ data["Unused"].items[0].name = "Ugroup";
 data["Unused"].items[0].items = [{name	: "Non"}];
 
 ##
-# Check object before loading it
+# Check objects before loading
 #
 var existNonEmpty = func(obj, type) {
     if (obj != nil) { # This test fails and throws '[INFO]:nasal   undefined symbol:' if obj is a namespace
@@ -351,12 +356,39 @@ var existNonEmpty = func(obj, type) {
     return 0;
     }
 
+var namestr = func(obj) {
+    return (isstr(obj) and !string.match(obj, "*/*"));
+    }
+
+var ppath = func(obj) {
+    if (isstr(obj) and string.match(obj, "*/*")) {
+        if (!string.match(obj, "/*")) {
+            print(banner~'property path "', obj, 
+            '" should be absolute, starting with a "/" char')
+            }
+        return 1;
+        }
+    return 0;
+    }
+
+var propertypath = func(obj) {
+    if (isvec(obj)) {
+        var i = 1;
+        forindex(var j; obj) { i = ppath(obj[j]) ? i : 0; }
+        return i;
+        }
+    return ppath(obj);
+    }
+
+
 ##
 # EXPORTED
-# Function to load demultiplexer setup
+# Function to load the demultiplexer setup
 #
 var load_dmx_config = func (hid) {
 	
+    ##
+    # Select a configuration file
     if (!demux) {demux = "default"}
     var alt = [demux, "default"];
 
@@ -435,157 +467,152 @@ var load_dmx_config = func (hid) {
             simControlGroup.cc_down = [simControlGroup.set_skip, [1]];
             simControlGroup.cc_up = [simControlGroup.set_skip, [0]];
 
+            var CGitems = dmxconf[hidCtrlItems[j]];
             ##
             # Load "name", "prop" and event/action pairs of each group
-            if (!existNonEmpty(dmxconf[hidCtrlItems[j]], "vector")) {
+            if (!existNonEmpty(CGitems, "vector")) {
                 print(banner~'Can not load item from ', hidCtrlItems[j], '. Check ', dmxfile);
                 continue;}
                 
-            simControlGroup.items = dmxconf[hidCtrlItems[j]];
-
             # Loop control group items
-            forindex(var k; simControlGroup.items) {
-                # Loop event keys
-                foreach(var key; keys(simControlGroup.items[k])) {
-                    var act = simControlGroup.items[k][key];
-                        
-                    # remove unknown keys
+            forindex(var k; CGitems) {
+
+                # Grow the items vector if needed
+                if (!(size(simControlGroup.items) > k)) {append(simControlGroup.items, {});}
+
+                # Check and copy "name" key
+                if (namestr(CGitems[k]["name"])) {
+                    simControlGroup.items[k]["name"] = CGitems[k]["name"]}
+                else {
+                    simControlGroup.items[k]["name"] = "Check name string";
+                    print(banner~'"name" string must not use the "/" character', 
+                          ' in "', CGitems[k]["name"], 
+                          '" in ', simControlGroup.name, ' group');
+                    debug.dump(CGitems[k]["name"]);
+                    }
+                # Check and copy "prop" key
+                if (contains(CGitems[k], "prop")) {
+                    if (propertypath(CGitems[k]["prop"])) {
+                        simControlGroup.items[k]["prop"] = CGitems[k]["prop"]} # FIX: slice copy
+                    else {
+                        print(banner~'"prop" value is not a valid property path in ', 
+                        simControlGroup.name, ' group: ');
+                        debug.dump(CGitems[k]["prop"]);}
+                    }
+
+                # Loop the keys of the item
+                foreach(var key; keys(CGitems[k])) {
+                    
+                    # these keys are already processed
+                    if (key == "name" or key == "prop") {continue;} # Skip to next key
+                    
+                    # ignore unknown keys
                     if (!(string.match(key, "*_down") 
                        or string.match(key, "*_up") 
                        or string.match(key, "*_short") 
-                       or string.match(key, "*_long") 
-                       or key == "name"
-                       or key == "prop")) {
+                       or string.match(key, "*_long"))) {
                         # Error message
                         print(banner~'key "', key, '" in ', 
                                simControlGroup.name, ' group is not valid');
-                        delete(simControlGroup.items[k], key);
+                        continue; # Skip to next key
+                        }
+
+						  ##
+                    # Process event key
+                    # Check and complete the action parameter vector 
+                    var act = CGitems[k][key];
+                    
+                    # Prepare an empty parameter vector      
+                    if (size(act) > 1) {
+                        # Action vector has both action string and action parameters
+                        var pars = act[1];
+                        act[1] = []; # start building the action parameter vector
+                        }
+                    else {
+                        # Action vector has only the action string
+                        var pars = [];
+                        append(act, []);  # start building the action parameter vector
+                        }
+                                
+                    var m = 0;
+                    if (size(pars) > 1 and propertypath(pars[0]) and propertypath(pars[1])) {
+                    # the first two parameters the property path identifying char "/"
+                        print(banner~'The first two parameters for the event "', key, 
+                        '" looks like property paths. The 1st par should be a popup, and only the 2nd par should have "/" character(s).'
+                        ' In "', simControlGroup.items[k]["name"], 
+                        '" in ', simControlGroup.name, ' group');
                         continue;
                         }
-                            
-                    # process event keys
-                    if (key != "name" and key != "prop") {
-                        # Check and complete the action parameter vector 
-                        # with respect to popup string and property path(s).
-                        var db = 0; # 1: debug
-                            
-                        if (size(act) > 1) {
-                        # Action vector has both action string and action parameters
-                            if (db) {print("act > 1");}
-                            if (db) {debug.dump(act);}
-                                
-                            var pars = act[1];
-                            act[1] = []; # start building the action parameter vector
-                               
-                            if (db) {debug.dump(act);}
-                            }
-                        else {
-                            # Action vector has only the action string
-                            if (db) {print("act < 2");}
-                            if (db) {debug.dump(act);}
-										 
-                            var pars = [];
-                            append(act, []);  # start building the action parameter vector
-                                
-                            if (db) {debug.dump(act);}
-                            }
-                                
-                        # If popup string is missing, insert the item name 
-                        # string as popup message into the parameter vector.
-                        var m = 0;
-                        # pars has at least on item and item is popup string
-                        if (size(pars) > m and isstr(pars[m]) and !string.match(pars[m], "*/*")) {
-								    if (db) {print("1 m = ", m);}
-                            if (db) {debug.dump(act[1]);}
-                                
-                            append(act[1], pars[m]);
-                            m += 1;
-                                
-                            if (db) {debug.dump(act[1]);}
-                            if (db) {print("2 m = ", m);}
-                            }
-                        else {
-                            append(act[1], simControlGroup.items[k]["name"]);
-                                
-                            if (db) {print("3 m = ", m);}
-                            if (db) {debug.dump(act[1]);}
-                            }
-                            
-                        # If property path (target) is missing insert (if available)
-                        # the item prop value.
-                        #
-                        # pars has a next item and item is prop
-                        # NOTE: the logic here will fail if target was omitted AND 
-                        # par is a string containing a "/".
-                        if (size(pars) > m) {var par = isvec(pars[m]) ? pars[m][0] : pars[m];}
-                        if (size(pars) > m and isstr(par) and string.match(par, "*/*")) {
- 								    if (db) {print("4 m = ", m);}
- 										  
-                            append(act[1], pars[m]);
-                            m += 1;
-                                
-                            if (db) {debug.dump(act[1]);}
-                            if (db) {print("5 m = ", m);}
-                            }
-                        else {
-                            if (db) {print("6 m = ", m);}
-                            # test that "prop" exist                                
-                            if (contains(simControlGroup.items[k], "prop")){
-                                if (db) {print("7 m = ", m);}
-                                    
-                                append(act[1], simControlGroup.items[k]["prop"]);
-                                    
-                                if (db) {debug.dump(act[1]);}
-                                if (db) {print("8 m = ", m);}
-                                }
-                            else if (act[0] == "popup" or act[0] == "script") {
-                                if (db) {print("9 m = ", m);}
-                                    
-                                append(act[1], nil);
-                                    
-                                if (db) {debug.dump(act[1]);}
-                                if (db) {print("10 m = ", m);}
-                                }
-                            else {
-                                # print error message and delete the key
-                                print(banner~'key "prop" is needed for the event ', key, 
-                                ' in "', simControlGroup.items[k]["name"], 
-                                '" in ', simControlGroup.name, ' group');
-                                delete(simControlGroup.items[k], key);
-                                continue;
-                                }
-                                    
-                            if (db) {print("6 m = ", m);}
-                                
-                            if (db) {debug.dump(act[1]);}
-                            if (db) {print("7 m = ", m);}
-                            }
-                            
-                        # Copy the rest of the parameters.
-                        while (size(pars) > m ) {
-                            append(act[1], pars[m]);
-                            if (db) {debug.dump(act[1]);}
-                            m += 1;
-                            }
 
-                        # Replace the action labels with the corresponding functions
-                        if (act[0]      == "toggle") {
-                            act[0] = toggle}
-                        else if (act[0] == "adjust") {
-                            act[0] = adjust}
-                        else if (act[0] == "script") {
-                            act[0] = script}
-                        else if (act[0] == "popup") {
-                            act[0] = popup}
-                        else if (act[0] == "swap") {
-                            act[0] = swap}
+                    if (size(pars) > m and namestr(pars[m])) { 
+                    # pars has at least one item and item is a popup string
+                        append(act[1], pars[m]);
+                        m += 1;
+                        }
+                    else {
+                    # use the item name string
+                        append(act[1], simControlGroup.items[k]["name"]);
+                        }
+                            
+                    # NOTE: the logic here will fail if property path was omitted 
+                    # AND par[m] is a string containing a "/".
+                    if (size(pars) > m and propertypath(pars[m])) {
+                    # pars has a next item and item is a prop path
+                        append(act[1], pars[m]);
+                        m += 1;
+                        }
+                    else {
+                        # try "prop" for property path(s)
+                        if (contains(simControlGroup.items[k], "prop")){
+                            append(act[1], simControlGroup.items[k]["prop"]);
+                            }
+                        else if (act[0] == "popup" or act[0] == "script") {
+                        # do without property path                                
+                            append(act[1], nil); 
+                            }
+                        else {
+                        # print error message and skip the key
+                            print(banner~'key "prop" is needed for the event ', key, 
+                            ' in "', simControlGroup.items[k]["name"], 
+                            '" in ', simControlGroup.name, ' group');
+                            continue;
+                            }
+                        }
+                            
+                    # Copy the rest of the parameters.
+                    while (size(pars) > m ) {
+                        append(act[1], pars[m]);
+                        m += 1;
+                        }
+
+                    # Replace the action labels with the corresponding functions
+                    if (act[0]      == "toggle") {
+                        act[0] = toggle}
+                    else if (act[0] == "adjust") {
+                        act[0] = adjust}
+                    else if (act[0] == "script") {
+                        act[0] = script}
+                    else if (act[0] == "popup") {
+                        act[0] = popup}
+                    else if (act[0] == "swap") {
+                        act[0] = swap}
+                    else { # Ignore unknown action labels
+                        print(banner~'unknown action "', act[0], 
+                        '" in "', simControlGroup.items[k]["name"], 
+                        '" in ', simControlGroup.name, ' group');
+                        continue;}
     
-                        if (db) {debug.dump(act[1]);}
-                        } # process event keys
+                    # (shallow) copy event/action to items
+                    simControlGroup.items[k][key] = [act[0], act[1][:]];
+                    # (deeper) manual copy if vector of property paths
+                    if (isvec(act[1][1])) {simControlGroup.items[k][key][1][1] = act[1][1][:]}
+                    
+                    # process event key finished
                     } # keys loop
                 } # items loop
             } # groups loop
         } # hid controls loop
+    dmxconf = {};
     return 1;
     }
 
@@ -595,7 +622,7 @@ var load_dmx_config = func (hid) {
 # button and button event
 #
 var action = func(nbr, evnt) {
-    # Button that was not defined in the demultiplexer setup, when pressed, 
+    # A button that was not defined in the demultiplexer setup, when pressed, 
     # causes "Nasal runtime error: non-objects have no members" written to 
     # the log. To prevent this, assign any such button to the "Unused" hidCtrls 
     # group. 
