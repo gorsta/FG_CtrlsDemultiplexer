@@ -20,11 +20,12 @@ var longpress = 0.4; # button down duration required for "long" press
 
 var del = ";"; # substring (not label) delimiter
 var del2 = ":"; # label delimiter
-#var del2 = "`"; # label delimiter
-#var del2 = "|"; # label delimiter
+var del3 = "$"; # Dont change or use! Argument reordering marker '$' is hard coded inline
+#var del = "`"; # `replace` delimiter
+#var del = "|"; # label delimiter
 ##
 # DO NOT USE:
-# var del3 = "/"; # delimiter
+# var del = "/"; # delimiter
 # '/' must not be used in a popup message string! It is already reserved and 
 # in use as the identifying characteristic of a property path string.
 
@@ -88,56 +89,67 @@ var showPopup = func(str, fmt=nil, props=nil) {
         print("fmt: ", fmt);
         debug.dump(props);}
 
-    if (size(str) > 0 ) {
-        var prop = isvec(props) ? props[0] : props;
-        var s = nil;
-        if (string.match(str, "*" ~ del2 ~ "*")) {
-			   # String contains a label substring. Extract the label.
-            s = split(del2, str);
-            str = s[1]; # substrings without the label one
-            s = s[0]; # the label
-            }
-        if (string.match(str, "*" ~ del ~ "*")) {
-			   # String contains substrings. Pick the relevant one.
-            str = split(del, str);
-            if (prop != nil and isint(getprop(prop))) {
-                str = str[getprop(prop)]; # FIXME?: Check that index is int
-                }
-             else {
-                 str = "property value int expected. Check property path"
-                 }
-            }
-        if (s!=nil) {str = s ~ ": " ~ str;} # prepend the label
+    if (!size(str) > 0 ) {return}
 
-# Move this testcase to 1st position        
-# Move this testcase to 1st position        
-        if (prop==nil) {
-            # no property given, just print string
-            gui.popupTip(str, duration);
-            return;
+    if (props==nil) {
+        # no property given, just print string
+        gui.popupTip(str, duration);
+        return;
+        }
+
+    var prop = isvec(props) ? props[0] : props;
+    var s = nil;
+    if (string.match(str, "*" ~ del2 ~ "*")) {
+        # String contains a label substring. Extract the label.
+        s = split(del2, str);
+        str = s[1]; # substrings without the label one
+        s = s[0]; # the label
+        }
+    if (string.match(str, "*" ~ del ~ "*")) {
+        # String contains substrings. Pick the relevant one.
+        str = split(del, str);
+        if (prop != nil and isint(getprop(prop))) {
+            str = str[getprop(prop)]; # FIXME?: Check that index is int
             }
-            
-# Move this testcase to 1st position        
-        if (string.match(str, "*%*")) {
-            # string has format specification print string and property value
-            if (isvec(props)) {
-                var pars = [];
-                var t = 0;
-                append(pars, str);
-                forindex(var i; props) {
-                    t = getprop(props[i]);
-                    # check that prop exists
-                    if (t!= nil) {append(pars, t);}
-                    else {gui.popupTip(props[i]~"\ndoes not exist or value is NaN", duration);
-                        return;}
-                    }
-                var str = call(sprintf, pars);
-                # debug.dump(str);
-                gui.popupTip(str, duration);
+        else {
+            str = "property value int expected. Check property path"
+            }
+        }
+    if (s!=nil) {str = s ~ ": " ~ str;} # prepend the label
+
+
+    if (string.match(str, "*%*")) {
+        var vec1 = split("%", str);
+        var vec2 = [];
+
+        var pars = [];
+        append(pars, string.replace(str,"$",""));
+
+        var prop = "";
+        var val = nil;
+
+        for (var i = 1; i < size(vec1); i += 1) {
+            vec2 = split("$", vec1[i]);
+
+            if (size(vec2) > 1) 
+                 {prop = isvec(props) ? props[num(vec2[0]-1)] : props} 
+            else {prop = isvec(props) ? props[i-1]            : props}
+
+            val = getprop(prop);
+            if (val != nil) {append(pars, val);}
+            else {
+                popup = prop~"\ndoes not exist or value is NaN";
+                gui.popupTip(popup, duration);
+
+                return;
                 }
-            else {gui.popupTip(sprintf(str, getprop(prop)), duration);}
-            return;
             }
+        popup = call(sprintf, pars);
+        gui.popupTip(popup, duration);
+
+        return;
+        }
+
             
         if (string.match(str, "* ")) {
             # string ends with space: add format and print string and property value
@@ -148,7 +160,6 @@ var showPopup = func(str, fmt=nil, props=nil) {
 			   
          # string does not end with a space: print string
          gui.popupTip(str, duration);
-        }
     }
 
 var popup = func(str, props=nil) {
@@ -659,7 +670,7 @@ var action = func(nbr, evnt) {
 							   showPopup(newItem.name, nil, prop)
                         }
                     }
-                break; # Event matched and action performed
+                break; # Event matched and action was performed
                 }
             }
         }

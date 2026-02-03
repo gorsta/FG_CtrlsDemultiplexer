@@ -62,6 +62,7 @@ var EN1items = ["FltInstr", "Autopilot"];
 
 var EN2items = ["NavLights", "Radio"];
 #var EN2items = ["NavLights"];
+#var EN2items = ["Radio"];
 
 var SW12items = ["EngCtrls"];
 
@@ -80,7 +81,8 @@ var xFltInstr = [
     ];
 
 var FltInstr = [ 
-    {name	: "ALTimeter: %.2f inHg", 
+#    {name	: "ALTimeter: %.2f inHg", 
+    {name	: "ALTimeter: %1$.2f inHg", 
     prop	   : "/instrumentation/altimeter/setting-inhg", 
     aa_short: ["adjust", [-0.02, 27.5, 31]],
     bb_short: ["adjust", [0.02, 27.5, 31]],
@@ -207,7 +209,8 @@ var NavLights = [
 # $FG_ROOT/gui/dialogs/radios.xml
 #
 var Radio = [
-    {name	: "COM1 (1 MHz)\n%.3f MHz standby\n%.3f MHz selected", 
+#    {name	: "COM1 (1 MHz)\n%.3f MHz standby\n%.3f MHz selected", 
+    {name	: "COM1 (1 MHz)\n%2$.3f MHz selected\n%1$.3f MHz standby", 
     prop	   : ["/instrumentation/comm[0]/frequencies/standby-mhz", 
                "/instrumentation/comm[0]/frequencies/selected-mhz"],
     aa_short: ["adjust", [-1, 118, 136.975]],
