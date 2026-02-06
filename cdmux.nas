@@ -12,22 +12,26 @@
 # You should have received a copy of the GNU General Public License along    #
 # with this program. If not, see <https://www.gnu.org/licenses/>.            #
 ##############################################################################
+var ot = emexec.OperationTimer.new("VSD", 3);
+
 var banner = '*** cdmux: ';
 print(banner~'loading cdmux');
 
 var duration = 2.5; # popup duration
 var longpress = 0.4; # button down duration required for "long" press
 
+##
+# String delimiters. Changing any of these delimiters will require a revision 
+# of the popup/sprintf format strings in each of the configuration files.
+# DO NOT USE: var del = "/"; # delimiter
+# '/' must not be used in a popup message string! It is already in reserved 
+# use as the identifying characteristic of a property path string.
+#
 var del = ";"; # substring (not label) delimiter
 var del2 = ":"; # label delimiter
 var del3 = "$"; # Dont change or use! Argument reordering marker '$' is hard coded inline
 #var del = "`"; # `replace` delimiter
 #var del = "|"; # label delimiter
-##
-# DO NOT USE:
-# var del = "/"; # delimiter
-# '/' must not be used in a popup message string! It is already reserved and 
-# in use as the identifying characteristic of a property path string.
 
 var fghome = getprop("/sim/fg-home");
 var matchingpatternsfile = "dmuxmatchmodel.nas";
@@ -397,7 +401,7 @@ var propertypath = func(obj) {
 # Function to load the demultiplexer setup
 #
 var load_dmx_config = func (hid) {
-	
+
     ##
     # Select a configuration file
     if (!demux) {demux = "default"}
@@ -633,6 +637,46 @@ var load_dmx_config = func (hid) {
 # button and button event
 #
 var action = func(nbr, evnt) {
+ot.reset();
+ot.log("start");
+    # A button that was not defined in the demultiplexer setup, when pressed, 
+    # causes "Nasal runtime error: non-objects have no members" written to 
+    # the log. To prevent this, assign any such button to the "Unused" hidCtrls 
+    # group. 
+    if (!contains(button, nbr)) {
+        #print("!!!!!!!!!!!!!!! this button is not defined !!!!!!!!!!!!!!!");
+        create_button(nbr, "Unused", "void");
+        }
+
+    var ev = button[nbr].sw ~ "_" ~ evnt;
+    var item = data[button[nbr].controlGrp]; # 1st item level
+    var i=0;
+
+    while (true) {
+        # Loop 0: act on group select
+        # Loop 1: act on item slect
+        # Loop 2: act on item
+        if (contains(item, ev) and call(item[ev][0], item[ev][1], item)) {
+            # Found matching event AND performed action
+            if (i < 2) { # show the item pointed to by the new focus
+                if (item[ev][-1] == "show") {
+                    newItem = item.items[item.fcs];
+                    var prop = contains(newItem, "prop") ? newItem.prop : nil;
+                    showPopup(newItem.name, nil, prop)
+                    }
+                }
+            break; # Event matched and action was performed
+            }
+        i += 1; 
+        if (i > 2) {break;} # no event found - search finished
+        item = item.items[item.fcs]; # down one item level
+        }
+ot.log("finished");
+    }
+
+var xaction = func(nbr, evnt) {
+ot.reset();
+ot.log("start");
     # A button that was not defined in the demultiplexer setup, when pressed, 
     # causes "Nasal runtime error: non-objects have no members" written to 
     # the log. To prevent this, assign any such button to the "Unused" hidCtrls 
@@ -674,6 +718,7 @@ var action = func(nbr, evnt) {
                 }
             }
         }
+ot.log("finished");
     }
 
 ##
