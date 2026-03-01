@@ -95,12 +95,21 @@ var load_into = func (hash, nasfile) {
 # Demultiplexer actions
 #
 var propexists = func(props) {
+#	print('propexists');
+#	debug.dump(props);
 # Check existence of props
-#    if (props == nil) {return 1}
-    forindex(var i; props) {
-        if (getprop(props[i]) == nil){
-            gui.popupTip(props[i]~"\ndoes not exist or value is NaN", duration);
-            return 0}
+    if (isvec(props)) {
+        forindex(var i; props) {
+            if (getprop(props[i]) == nil){
+                gui.popupTip(props[i]~"\ndoes not exist or value is NaN", duration);
+                return 0}
+            }
+        }
+    else {
+        gui.popupTip('Not a property path. Check logfile', duration);
+	     print(banner~'Not a property path:');
+	     debug.dump(props);
+	     return 0
         }
     return 1
     }
@@ -110,17 +119,16 @@ print("showPopup parameters:");
 debug.dump([str, fmt, props]);    
 
     if (!size(str) > 0 ) {print("#### size str =0"); return}
-        # Zero size string given: don't popup
+    # Zero size string given: don't popup
 
     if (props==nil) {
-        # No property given, just popup
+    # No property given, just popup
         gui.popupTip(str, duration);
         print("#### size props=nil"); 
         return;
         }
-#===================================================
-# Message string and property path(s) are provided
-#
+
+    # Message string and property path(s) are provided
     str = split(mk1, str); # Separate msg from rep
     var msg = split('%', str[0]);
     var spfvec = [msg[0]];
@@ -159,114 +167,30 @@ debug.dump([str, fmt, props]);
             }
         }
         
-    if (size(msg) > 1) { # Format code and property value(s) present. popup and return
+    if (size(msg) > 1) { 
+    # Format code and property value(s) present. popup and return
         gui.popupTip(call(sprintf, spfvec), duration);
         return
         }
 
-    if (string.match(msg[0], "* ")) { # No format code but an ending space: Add format and property value, popup and return
+    if (string.match(msg[0], "* ")) {
+    # No format code but an ending space: Add format and property value, popup and return
         if (fmt==nil) {fmt = "%u"}
         gui.popupTip(sprintf(spfvec[0]~fmt, getprop(props[0])), duration);
         return;
         }
 
-    else { # No format code, no ending space: popup message and return
+    else {
+    # No format code, no ending space: popup message and return
         gui.popupTip(spfvec[0], duration);
         return;
         }
     }
 
-######################################################################################################
-######################################################################################################
-######################################################################################################
-
-var xshowPopup = func(str, fmt=nil, props=nil) {
-# TODO revise the order of tests and string handling
-# Show popup
-    if (0) { # true: debug
-        print("str: ", str);
-        print("fmt: ", fmt);
-        debug.dump(props)}
-
-    if (!size(str) > 0 ) {return}
-
-    if (props==nil) {
-        # no property given, just print string
-        gui.popupTip(str, duration);
-        return;
-        }
-
-    var prop = isvec(props) ? props[0] : props; # handle only the case ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    var s = nil;
-    
-    
-    if (string.match(str, "*" ~ del2 ~ "*")) {
-        # String contains a label substring. Extract the label.
-        s = split(del2, str);
-        str = s[1]; # substrings without the label one
-        s = s[0]; # the label
-        }
-    if (string.match(str, "*" ~ del ~ "*")) {
-        # String contains substrings. Pick the relevant one.
-        str = split(del, str);
-        if (prop != nil and isint(getprop(prop))) { # handle only the case ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-            str = str[getprop(prop)]; # FIXME?: Check that index is int
-            }
-        else {
-            str = "property value int expected. Check property path"
-            }
-        }
-    if (s!=nil) {str = s ~ ": " ~ str} # prepend the label
-
-
-    if (string.match(str, "*%*")) {
-        var vec1 = split("%", str);
-        var vec2 = [];
-
-        var pars = [];
-        append(pars, string.replace(str,"$",""));
-
-        var prop = "";
-        var val = nil;
-
-        for (var i = 1; i < size(vec1); i += 1) {
-            vec2 = split("$", vec1[i]);
-
-            if (size(vec2) > 1) 
-                 {prop = isvec(props) ? props[num(vec2[0]-1)] : props}  # handle only the case ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-            else {prop = isvec(props) ? props[i-1]            : props}  # handle only the case ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-            val = getprop(prop); # handle only the case ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-            if (val != nil) {append(pars, val)}
-            else {
-                popup = prop~"\ndoes not exist or value is NaN"; # handle only the case ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-                gui.popupTip(popup, duration);
-
-                return;
-                }
-            }
-        popup = call(sprintf, pars);
-        gui.popupTip(popup, duration);
-
-        return;
-        }
-
-            
-        if (string.match(str, "* ")) {
-            # string ends with space: add format and print string and property value
-            if (fmt==nil) {fmt = "%u"}
-			   gui.popupTip(sprintf(str~fmt, getprop(prop)), duration); # handle only the case ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-            return;
-			   }
-			   
-         # string does not end with a space: print string
-         gui.popupTip(str, duration);
-    }
 
 var popup = func(str, props=nil) {
 # Wrapper for showPopup
     if (props==nil or propexists(props)) {showPopup(str, nil, props)}
-#    showPopup(str, nil, props);
     return 1; # Task is completed regardless wether a property was toggled or not
     }
 
@@ -276,18 +200,6 @@ var toggle = func(popup, props) {
         setprop(props[0], math.mod(getprop(props[0]) + 1, 2));
         showPopup(popup, "%u", props)
         }
-    return 1; # Task is completed regardless wether a property was toggled or not
-    }
-
-var xtoggle = func(popup, props) {
-# Toggle a property
-    var prop = isvec(props) ? props[0] : props; # handle only the case ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    var t = getprop(prop);
-    if (t != nil) {setprop(prop, math.mod(t += 1, 2))}
-    else {
-        popup = prop~"\ndoes not exist or value is NaN";
-	     }
-    showPopup(popup, "%u", props);
     return 1; # Task is completed regardless wether a property was toggled or not
     }
 
@@ -305,27 +217,6 @@ var swap = func(popup, props) {
         setprop(props[1], val0);
         showPopup(popup, nil, props);
         }
-    return 1; # Task is completed regardless wether a property was toggled or not
-    }
-
-var xswap = func(popup, props) {
-# Swap the values of two properties
-    if (isvec(props) and size(props)>1) { # handle only the case ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        var val0 = getprop(props[0]); 
-        var val1 = getprop(props[1]); 
-        if (val0 != nil and val1 != nil) {
-            # swap values
-            setprop(props[0], val1);
-            setprop(props[1], val0);
-            }
-        else { # popup error message
-            popup = props[0]~"\n"~props[1]~"\ndoes not exist or value is NaN";
-            }
-        }
-    else { # popup error message
-        var popup = "swap action needs two properties to act on";
-        }
-    showPopup(popup, nil, props);
     return 1; # Task is completed regardless wether a property was toggled or not
     }
 
@@ -348,32 +239,9 @@ var adjust = func(popup, props, step=1, min=0, max=1, wrap=0) {
     return 1; # Task is completed regardless wether a property was changed or not
     }
 
-var xadjust = func(popup, props, step=1, min=0, max=1, wrap=0) {
-# Adjust a property within bounds
-    var prop = isvec(props) ? props[0] : props; # handle only the case ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    var t = getprop(prop);
-    if (t != nil) {
-        t += step;
-        if (wrap) {
-            if (t < min) {t = max}
-            else if (t > max){t = min}
-            } 
-        else {
-            if (t < min) {t = min}
-            else if (t > max){t = max}
-            } 
-        setprop(prop, t);
-        }
-    else {
-        popup = prop~"\ndoes not exist or value is NaN";
-	     }
-    showPopup(popup, "%.2f", props);
-    return 1; # Task is completed regardless wether a property was changed or not
-    }
-
 var script = func(popup, prop, function) {
 # Run a script
-    if (propexists(prop)) {
+    if (prop==nil or propexists(prop)) {
         call(function, nil, nil, nil, var err = []);
 	     if (size(err)) { 			# check err
 	         debug.dump(err);
@@ -386,19 +254,6 @@ var script = func(popup, prop, function) {
     return 1; # Task is completed regardless wether the script was successful or not
     }
 
-var xscript = func(popup, prop, function) {
-# Run a script
-    var f = function;
-    call(f, nil, nil, nil, var err = []);
-	 if (size(err)) { 			# check err
-	     debug.dump(err);
-	     print('. . when "', popup, '". See demux scriptfile');
-	     }
-	 else {
-        showPopup(popup, nil, prop);
-	     }
-    return 1; # Task is completed regardless wether the script was successful or not
-    }
 
 ##
 # Class for group of sim controls
@@ -663,7 +518,8 @@ var load_dmx_config = func (hid) {
                     }
                 # Check and copy "prop" key
                 if (contains(CGitems[k], "prop")) {
-                    if (propertypath(CGitems[k]["prop"])) { # convert "ppath" to ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                    if (propertypath(CGitems[k]["prop"])) {
+                        # convert "ppath" to ["ppath"]
                         if (isstr(CGitems[k]["prop"])) {CGitems[k]["prop"] = [CGitems[k]["prop"]]}
                         simControlGroup.items[k]["prop"] = CGitems[k]["prop"][:]} # FIX: slice copy
                     else {
@@ -731,8 +587,9 @@ var load_dmx_config = func (hid) {
                     # a string containing a "/".
                     if (size(pars) > m and propertypath(pars[m])) {
                     # pars has a next item and item is a prop path
+                        # convert "ppath" to ["ppath"]
                         if (isstr(pars[m])) {pars[m] = [pars[m]]}
-                        append(act[1], pars[m]); # convert "ppath" to ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                        append(act[1], pars[m]);
                         m += 1;
                         }
                     else {
