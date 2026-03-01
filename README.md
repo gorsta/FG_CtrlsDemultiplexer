@@ -206,7 +206,7 @@ The popup message
 -----------------
 A popup message is displayed in sim after selecting an item. The items name string is used for the message.
 
-A popup message may be displayed in sinm after performing an action. The message is composed according to the following rules.
+A popup message may be displayed in sim after performing an action. The message is composed according to the following rules.
 
 When no message string is given in the params vector:  
 
@@ -226,7 +226,7 @@ Message string ends with a space:
 
 Message string contains the % (formatting) character:  
 
-> *Formatting embedded in the message string is applied to the property value. Message string with the formatted property value inserted is displayed after the action.* 
+> *Formatting embedded in the message string is applied to the property value. Message string with the property value is displayed after the action.* 
 
 For action "script" there would generally be no obvious property associated. Therefore, only the message string is displayed.
 

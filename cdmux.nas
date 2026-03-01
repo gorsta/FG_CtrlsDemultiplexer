@@ -27,11 +27,21 @@ var longpress = 0.4; # button down duration required for "long" press
 # '/' must not be used in a popup message string! It is already in reserved 
 # use as the identifying characteristic of a property path string.
 #
+var mk1 = ';'; # format str/ rep str and 
+# enum/replace marker, e.g.:										';OFF|RIGHT|BOTH|LEFT'
+var mk2 = '%'; # Dont change or use! 
+# Format marker '%' is hardcoded inline
+var mk3 = '$'; # Dont change or use! 
+# Argument reordering marker '$' is hard coded inline
+var mk4 = '|'; # enum str/srch-repl str marker, e.g.:		'|altitude-hold:engaged'
+var mk5 = ':'; # replace str marker, e.g.:					':engaged'
+#var mk = '`'; # alternative marker
+#var mk = '\'; # alternative marker
+#var mk = '@'; # alternative marker
+
 var del = ";"; # substring (not label) delimiter
 var del2 = ":"; # label delimiter
 var del3 = "$"; # Dont change or use! Argument reordering marker '$' is hard coded inline
-#var del = "`"; # `replace` delimiter
-#var del = "|"; # label delimiter
 
 var fghome = getprop("/sim/fg-home");
 var matchingpatternsfile = "dmuxmatchmodel.nas";
@@ -84,14 +94,99 @@ var load_into = func (hash, nasfile) {
 ##
 # Demultiplexer actions
 #
+var propexists = func(props) {
+# Check existence of props
+#    if (props == nil) {return 1}
+    forindex(var i; props) {
+        if (getprop(props[i]) == nil){
+            gui.popupTip(props[i]~"\ndoes not exist or value is NaN", duration);
+            return 0}
+        }
+    return 1
+    }
 
 var showPopup = func(str, fmt=nil, props=nil) {
+print("showPopup parameters:");
+debug.dump([str, fmt, props]);    
+
+    if (!size(str) > 0 ) {print("#### size str =0"); return}
+        # Zero size string given: don't popup
+
+    if (props==nil) {
+        # No property given, just popup
+        gui.popupTip(str, duration);
+        print("#### size props=nil"); 
+        return;
+        }
+#===================================================
+# Message string and property path(s) are provided
+#
+    str = split(mk1, str); # Separate msg from rep
+    var msg = split('%', str[0]);
+    var spfvec = [msg[0]];
+    var rep = "";
+    var replace = false;
+    if (size(str) > 1) {
+        rep = str[1:];
+        replace = true
+        }
+    var argnum = 0;
+    
+    forindex (var i; msg) {
+        if (i<1) {continue} # This index has no order info
+        
+        msg[i] = split('$', msg[i]);
+        argnum = size(msg[i]) > 1 ? msg[i][0]-1 : i-1; # Automatic argument (re)ordering
+        
+        append(spfvec, getprop(props[argnum])); # Build sprintf argument vector
+        spfvec[0] = spfvec[0] ~ '%' ~ msg[i][-1]; # Rebuild the message string without argument numbering
+
+        if (replace and !string.match(rep[i-1], "")) { # replace AND current value replacement
+            rep[i-1] = split(mk4, rep[i-1]);
+            
+            if (isstr(spfvec[-1])) { # string replace
+                forindex (var j; rep[i-1]) {
+                    rep[i-1][j] = split(mk5, rep[i-1][j]);
+                    
+                    if (string.match(rep[i-1][j][0], spfvec[-1])) {
+                        spfvec[-1] = rep[i-1][j][1] # string replace
+                        }
+                    }
+                }
+            else { # enum strings
+                spfvec[-1] = rep[i-1][spfvec[-1]]; # Replace value(s)
+				    }
+            }
+        }
+        
+    if (size(msg) > 1) { # Format code and property value(s) present. popup and return
+        gui.popupTip(call(sprintf, spfvec), duration);
+        return
+        }
+
+    if (string.match(msg[0], "* ")) { # No format code but an ending space: Add format and property value, popup and return
+        if (fmt==nil) {fmt = "%u"}
+        gui.popupTip(sprintf(spfvec[0]~fmt, getprop(props[0])), duration);
+        return;
+        }
+
+    else { # No format code, no ending space: popup message and return
+        gui.popupTip(spfvec[0], duration);
+        return;
+        }
+    }
+
+######################################################################################################
+######################################################################################################
+######################################################################################################
+
+var xshowPopup = func(str, fmt=nil, props=nil) {
 # TODO revise the order of tests and string handling
 # Show popup
     if (0) { # true: debug
         print("str: ", str);
         print("fmt: ", fmt);
-        debug.dump(props);}
+        debug.dump(props)}
 
     if (!size(str) > 0 ) {return}
 
@@ -101,8 +196,10 @@ var showPopup = func(str, fmt=nil, props=nil) {
         return;
         }
 
-    var prop = isvec(props) ? props[0] : props;
+    var prop = isvec(props) ? props[0] : props; # handle only the case ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     var s = nil;
+    
+    
     if (string.match(str, "*" ~ del2 ~ "*")) {
         # String contains a label substring. Extract the label.
         s = split(del2, str);
@@ -112,14 +209,14 @@ var showPopup = func(str, fmt=nil, props=nil) {
     if (string.match(str, "*" ~ del ~ "*")) {
         # String contains substrings. Pick the relevant one.
         str = split(del, str);
-        if (prop != nil and isint(getprop(prop))) {
+        if (prop != nil and isint(getprop(prop))) { # handle only the case ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
             str = str[getprop(prop)]; # FIXME?: Check that index is int
             }
         else {
             str = "property value int expected. Check property path"
             }
         }
-    if (s!=nil) {str = s ~ ": " ~ str;} # prepend the label
+    if (s!=nil) {str = s ~ ": " ~ str} # prepend the label
 
 
     if (string.match(str, "*%*")) {
@@ -136,13 +233,13 @@ var showPopup = func(str, fmt=nil, props=nil) {
             vec2 = split("$", vec1[i]);
 
             if (size(vec2) > 1) 
-                 {prop = isvec(props) ? props[num(vec2[0]-1)] : props} 
-            else {prop = isvec(props) ? props[i-1]            : props}
+                 {prop = isvec(props) ? props[num(vec2[0]-1)] : props}  # handle only the case ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+            else {prop = isvec(props) ? props[i-1]            : props}  # handle only the case ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-            val = getprop(prop);
-            if (val != nil) {append(pars, val);}
+            val = getprop(prop); # handle only the case ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+            if (val != nil) {append(pars, val)}
             else {
-                popup = prop~"\ndoes not exist or value is NaN";
+                popup = prop~"\ndoes not exist or value is NaN"; # handle only the case ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                 gui.popupTip(popup, duration);
 
                 return;
@@ -157,8 +254,8 @@ var showPopup = func(str, fmt=nil, props=nil) {
             
         if (string.match(str, "* ")) {
             # string ends with space: add format and print string and property value
-            if (fmt==nil) {fmt = "%u";}
-			   gui.popupTip(sprintf(str~fmt, getprop(prop)), duration);
+            if (fmt==nil) {fmt = "%u"}
+			   gui.popupTip(sprintf(str~fmt, getprop(prop)), duration); # handle only the case ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
             return;
 			   }
 			   
@@ -168,15 +265,25 @@ var showPopup = func(str, fmt=nil, props=nil) {
 
 var popup = func(str, props=nil) {
 # Wrapper for showPopup
-    showPopup(str, nil, props);
+    if (props==nil or propexists(props)) {showPopup(str, nil, props)}
+#    showPopup(str, nil, props);
     return 1; # Task is completed regardless wether a property was toggled or not
     }
 
 var toggle = func(popup, props) {
 # Toggle a property
-    var prop = isvec(props) ? props[0] : props;
+    if (propexists(props)) {
+        setprop(props[0], math.mod(getprop(props[0]) + 1, 2));
+        showPopup(popup, "%u", props)
+        }
+    return 1; # Task is completed regardless wether a property was toggled or not
+    }
+
+var xtoggle = func(popup, props) {
+# Toggle a property
+    var prop = isvec(props) ? props[0] : props; # handle only the case ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     var t = getprop(prop);
-    if(t != nil) {setprop(prop, math.mod(t += 1, 2))}
+    if (t != nil) {setprop(prop, math.mod(t += 1, 2))}
     else {
         popup = prop~"\ndoes not exist or value is NaN";
 	     }
@@ -186,7 +293,24 @@ var toggle = func(popup, props) {
 
 var swap = func(popup, props) {
 # Swap the values of two properties
-    if (isvec(props) and size(props)>1) {
+    if (size(props)<2) { # popup error message
+        showPopup("swap action needs two properties to act on", nil, nil);
+        return 1; # Task is completed regardless wether a property was toggled or not
+        }
+    if (propexists(props)) {
+    # swap values
+        var val0 = getprop(props[0]); 
+        var val1 = getprop(props[1]); 
+        setprop(props[0], val1);
+        setprop(props[1], val0);
+        showPopup(popup, nil, props);
+        }
+    return 1; # Task is completed regardless wether a property was toggled or not
+    }
+
+var xswap = func(popup, props) {
+# Swap the values of two properties
+    if (isvec(props) and size(props)>1) { # handle only the case ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         var val0 = getprop(props[0]); 
         var val1 = getprop(props[1]); 
         if (val0 != nil and val1 != nil) {
@@ -207,17 +331,36 @@ var swap = func(popup, props) {
 
 var adjust = func(popup, props, step=1, min=0, max=1, wrap=0) {
 # Adjust a property within bounds
-    var prop = isvec(props) ? props[0] : props;
+    if (propexists(props)) {
+        var t = getprop(props[0]);
+        t += step;
+        if (wrap) {
+            if (t < min) {t = max}
+            else if (t > max){t = min}
+            } 
+        else {
+            if (t < min) {t = min}
+            else if (t > max){t = max}
+            } 
+        setprop(props[0], t);
+        showPopup(popup, "%.2f", props);
+        }
+    return 1; # Task is completed regardless wether a property was changed or not
+    }
+
+var xadjust = func(popup, props, step=1, min=0, max=1, wrap=0) {
+# Adjust a property within bounds
+    var prop = isvec(props) ? props[0] : props; # handle only the case ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     var t = getprop(prop);
     if (t != nil) {
         t += step;
         if (wrap) {
-            if (t < min) {t = max;}
-            else if (t > max){t = min;}
+            if (t < min) {t = max}
+            else if (t > max){t = min}
             } 
         else {
-            if (t < min) {t = min;}
-            else if (t > max){t = max;}
+            if (t < min) {t = min}
+            else if (t > max){t = max}
             } 
         setprop(prop, t);
         }
@@ -229,6 +372,21 @@ var adjust = func(popup, props, step=1, min=0, max=1, wrap=0) {
     }
 
 var script = func(popup, prop, function) {
+# Run a script
+    if (propexists(prop)) {
+        call(function, nil, nil, nil, var err = []);
+	     if (size(err)) { 			# check err
+	         debug.dump(err);
+	         print('. . when "', popup, '". See demux scriptfile');
+	         }
+	     else {
+            showPopup(popup, nil, prop);
+	         }
+        }
+    return 1; # Task is completed regardless wether the script was successful or not
+    }
+
+var xscript = func(popup, prop, function) {
 # Run a script
     var f = function;
     call(f, nil, nil, nil, var err = []);
@@ -268,21 +426,19 @@ var FGctrl = {
         obj.skip = 0;
         obj.items = [{}]; # Even with no items the size is 1
         obj.set_skip = func (par) {
-#                    if (par == "shift") {me.skip = !shift();}
-                    if (par == "shift") {me.skip = !shift;}
-                    else if (par) {me.skip = 1;}
-                    else {me.skip = 0;}
-                    # print(me.name, ": skip = ", me.skip);
+                    if (par == "shift") {me.skip = !shift}
+                    else if (par) {me.skip = 1}
+                    else {me.skip = 0}
                     return 1;
                     };
         obj.aa_short = [func {if (!me.skip) 
                     {me.fcs = math.mod(me.fcs -= 1, size(me.items)); return 1}
-                   else {return 0}
-                   }, [], "show"];
+                    else {return 0}
+                    }, [], "show"];
         obj.bb_short = [func {if (!me.skip) 
                     {me.fcs = math.mod(me.fcs += 1, size(me.items)); return 1}
-                   else {return 0}
-                   }, [], "show"];
+                    else {return 0}
+                    }, [], "show"];
 
         obj.init();
         return obj;
@@ -308,7 +464,7 @@ if (fghome != nil) {
 
 var aircraft = getprop('/sim/aircraft');
 if (aircraft == nil) {
-    aircraft = getprop('/sim/description');}
+    aircraft = getprop('/sim/description')}
 
 var demux = nil; # Name of aircraft demux configuration file
 
@@ -362,9 +518,9 @@ data["Unused"].items[0].items = [{name	: "Non"}];
 #
 var existNonEmpty = func(obj, type) {
     if (obj != nil) { # This test fails and throws '[INFO]:nasal   undefined symbol:' if obj is a namespace
-        if (type == "vector" and size(obj) > 0 and isvec(obj)) { return 1;}
-        if (type == "hash" and size(obj) > 0 and ishash(obj)) { return 1;}
-        if (type == "str" and size(obj) > 0 and isstr(obj)) { return 1;} 
+        if (type == "vector" and size(obj) > 0 and isvec(obj)) { return 1}
+        if (type == "hash" and size(obj) > 0 and ishash(obj)) { return 1}
+        if (type == "str" and size(obj) > 0 and isstr(obj)) { return 1} 
         # size(obj) fails if obj is integer, . . (integer has no size)
         return 0;
         }
@@ -436,11 +592,11 @@ var load_dmx_config = func (hid) {
         var hidCtrl = dmxconf.hidCtrls[i];
         if (!existNonEmpty(hidCtrl, "str")) {
             print(banner~'Item is not a valid string. Check hidCtrls in ', dmxfile);
-            continue;}
+            continue}
     
         if (contains(data, hidCtrl)) {
             print(banner~'hidCtrl ', hidCtrl, ' already in use. Check hidCtrls in ', dmxfile);
-            continue;}
+            continue}
     
         data[hidCtrl] = FGctrl.new();
         data[hidCtrl].name = hidCtrl;
@@ -450,7 +606,7 @@ var load_dmx_config = func (hid) {
     
         if (!existNonEmpty(dmxconf[hidCtrl~"buttons"], "hash")) {
             print(banner~'Can not load ', hidCtrl~"buttons", '. Check ', dmxfile);
-            continue;}
+            continue}
             
         ##
         # Load assignments of hid control buttons to switch IDs
@@ -465,7 +621,7 @@ var load_dmx_config = func (hid) {
         # Load control groups
         if (!existNonEmpty(dmxconf[hidCtrl~"items"], "vector")) {
             print(banner~'Can not load ', hidCtrl~"items", '. Check ', dmxfile);
-            continue;}
+            continue}
             
         var hidCtrlItems = dmxconf[hidCtrl~"items"];
 
@@ -474,7 +630,7 @@ var load_dmx_config = func (hid) {
             
             if (!existNonEmpty(hidCtrlItems[j], "str")) {
                 print(banner~'Can not load ', hidCtrlItems[j], '. Check ', dmxfile);
-                continue;}
+                continue}
             
             append(data[hidCtrl].items, FGctrl.new());
             var simControlGroup = data[hidCtrl].items[j];
@@ -487,13 +643,13 @@ var load_dmx_config = func (hid) {
             # Load "name", "prop" and event/action pairs of each group
             if (!existNonEmpty(CGitems, "vector")) {
                 print(banner~'Can not load item from ', hidCtrlItems[j], '. Check ', dmxfile);
-                continue;}
+                continue}
                 
             # Loop control group items
             forindex(var k; CGitems) {
 
                 # Grow the items vector if needed
-                if (!(size(simControlGroup.items) > k)) {append(simControlGroup.items, {});}
+                if (!(size(simControlGroup.items) > k)) {append(simControlGroup.items, {})}
 
                 # Check and copy "name" key
                 if (namestr(CGitems[k]["name"])) {
@@ -507,19 +663,20 @@ var load_dmx_config = func (hid) {
                     }
                 # Check and copy "prop" key
                 if (contains(CGitems[k], "prop")) {
-                    if (propertypath(CGitems[k]["prop"])) {
-                        simControlGroup.items[k]["prop"] = CGitems[k]["prop"]} # FIX: slice copy
+                    if (propertypath(CGitems[k]["prop"])) { # convert "ppath" to ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                        if (isstr(CGitems[k]["prop"])) {CGitems[k]["prop"] = [CGitems[k]["prop"]]}
+                        simControlGroup.items[k]["prop"] = CGitems[k]["prop"][:]} # FIX: slice copy
                     else {
                         print(banner~'"prop" value is not a valid property path in ', 
                         simControlGroup.name, ' group: ');
-                        debug.dump(CGitems[k]["prop"]);}
+                        debug.dump(CGitems[k]["prop"])}
                     }
 
                 # Loop the keys of the item
                 foreach(var key; keys(CGitems[k])) {
                     
                     # these keys are already processed
-                    if (key == "name" or key == "prop") {continue;} # Skip to next key
+                    if (key == "name" or key == "prop") {continue} # Skip to next key
                     
                     # ignore unknown keys
                     if (!(string.match(key, "*_down") 
@@ -551,7 +708,7 @@ var load_dmx_config = func (hid) {
                                 
                     var m = 0;
                     if (size(pars) > 1 and propertypath(pars[0]) and propertypath(pars[1])) {
-                    # the first two parameters the property path identifying char "/"
+                    # the first two parameters has the property path identifying char "/"
                         print(banner~'The first two parameters for the event "', key, 
                         '" looks like property paths. The 1st par should be a popup, and only the 2nd par should have "/" character(s).'
                         ' In "', simControlGroup.items[k]["name"], 
@@ -569,11 +726,13 @@ var load_dmx_config = func (hid) {
                         append(act[1], simControlGroup.items[k]["name"]);
                         }
                             
-                    # NOTE: the logic here will fail if property path was omitted 
-                    # AND par[m] is a string containing a "/".
+                    # NOTE: the logic here will fail to detect the faulty 
+                    # parameter if property path was omitted AND par[m] is 
+                    # a string containing a "/".
                     if (size(pars) > m and propertypath(pars[m])) {
                     # pars has a next item and item is a prop path
-                        append(act[1], pars[m]);
+                        if (isstr(pars[m])) {pars[m] = [pars[m]]}
+                        append(act[1], pars[m]); # convert "ppath" to ["ppath"] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
                         m += 1;
                         }
                     else {
@@ -615,7 +774,7 @@ var load_dmx_config = func (hid) {
                         print(banner~'unknown action "', act[0], 
                         '" in "', simControlGroup.items[k]["name"], 
                         '" in ', simControlGroup.name, ' group');
-                        continue;}
+                        continue}
     
                     # (shallow) copy event/action to items
                     simControlGroup.items[k][key] = [act[0], act[1][:]];
@@ -658,68 +817,21 @@ ot.log("start");
         # Loop 2: act on item
         if (contains(item, ev) and call(item[ev][0], item[ev][1], item)) {
             # Found matching event AND performed action
-            if (i < 2) { # show the item pointed to by the new focus
-                if (item[ev][-1] == "show") {
+            if (i < 2 and item[ev][-1] == "show") { # show the item pointed to by the new focus
                     newItem = item.items[item.fcs];
                     var prop = contains(newItem, "prop") ? newItem.prop : nil;
-                    showPopup(newItem.name, nil, prop)
-                    }
+#                    showPopup(newItem.name, nil, prop)
+                    popup(newItem.name, prop)
                 }
             break; # Event matched and action was performed
             }
         i += 1; 
-        if (i > 2) {break;} # no event found - search finished
+        if (i > 2) {break} # no event found - search finished
         item = item.items[item.fcs]; # down one item level
         }
 ot.log("finished");
     }
 
-var xaction = func(nbr, evnt) {
-ot.reset();
-ot.log("start");
-    # A button that was not defined in the demultiplexer setup, when pressed, 
-    # causes "Nasal runtime error: non-objects have no members" written to 
-    # the log. To prevent this, assign any such button to the "Unused" hidCtrls 
-    # group. 
-    if (!contains(button, nbr)) {
-        #print("!!!!!!!!!!!!!!! this button is not defined !!!!!!!!!!!!!!!");
-        create_button(nbr, "Unused", "void");
-        }
-
-    var ev = button[nbr].sw ~ "_" ~ evnt;
-    #print(ev);
-    var act = "";
-    var item = {};
-    
-    for (var i=0; i < 3; i = i+1) {
-        # Loop 0: act on group select
-        # Loop 1: act on item slect
-        # Loop 2: act on item
-        if (i == 0) {
-            item = data[button[nbr].controlGrp]}
-        else {
-            item = item.items[item.fcs]}
-
-        if (contains(item, ev)) {
-            # Found matching event
-            act = item[ev];
-            if (call(act[0], act[1], item)) {
-                # Loop 0: new group selected
-                # Loop 1: new item slected
-                # Loop 2: acted on item
-                if (i < 2) {                # show the item pointed to by the new focus
-                    if (act[size(act)-1] == "show") {
-							   newItem = item.items[item.fcs];
-							   var prop = contains(newItem, "prop") ? newItem.prop : nil;
-							   showPopup(newItem.name, nil, prop)
-                        }
-                    }
-                break; # Event matched and action was performed
-                }
-            }
-        }
-ot.log("finished");
-    }
 
 ##
 # EXPORTED

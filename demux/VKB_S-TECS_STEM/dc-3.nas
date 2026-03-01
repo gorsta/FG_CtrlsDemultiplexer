@@ -27,7 +27,9 @@ print("Loading dc-3 S-TECS_STEM dmux");
 ##
 # Groups of buttons to use with the demultipleser
 #
-var hidCtrls = ["EN1", "EN2", "SW12"];
+#var hidCtrls = ["EN1", "EN2", "SW12"];
+var hidCtrls = ["EN1", "EN2"];
+#var hidCtrls = ["EN1"];
 #var hidCtrls = ["EN2"];
 
 ##
@@ -58,13 +60,13 @@ var SW12buttons = {
 # Groups of sim/cockpit controls for the demultiplexer
 #
 var EN1items = ["FltInstr", "Autopilot"];
-# var EN1items = ["FltInstr"];
+#var EN1items = ["FltInstr"];
 
 var EN2items = ["NavLights", "Radio"];
 #var EN2items = ["NavLights"];
 #var EN2items = ["Radio"];
 
-var SW12items = ["EngCtrls"];
+#var SW12items = ["EngCtrls"];
 
 ##
 # Sim/cockpit controls
@@ -72,17 +74,16 @@ var SW12items = ["EngCtrls"];
 
 
 var xFltInstr = [ 
-    {name	: "ALTimeter: %.2f inHg", 
-    prop	   : "instrumentation/altimeter/setting-inhg", 
-    aa_short: ["adjust", [-0.02, 27.5, 31]],
-    bb_short: ["adjust", [0.02, 27.5, 31]],
+    {name	: "ALTimeter ", 
+#    prop	   : "/instrumentation/altimeter/setting-inhg", 
+    aa_short: ["adjust", ["", "/instrumentation/altimeter/setting-inhg", -0.02, 27.5, 31]],
+    bb_short: ["adjust", ["/instrumentation/altimeter/setting-inhg", 0.02, 27.5, 31]],
     cc_long : ["popup"],
     }, 
     ];
 
 var FltInstr = [ 
-#    {name	: "ALTimeter: %.2f inHg", 
-    {name	: "ALTimeter: %1$.2f inHg", 
+    {name	: "ALTimeter: %.2f inHg", 
     prop	   : "/instrumentation/altimeter/setting-inhg", 
     aa_short: ["adjust", [-0.02, 27.5, 31]],
     bb_short: ["adjust", [0.02, 27.5, 31]],
@@ -90,7 +91,7 @@ var FltInstr = [
     }, 
     {name	: "ALTimeter: %.1f hPa", 
     prop	   : "/instrumentation/altimeter/setting-hpa", 
-    aa_short: ["adjust", [-0.5, 931, 1050]],
+    aa_short: ["adjust", ["/instrumentation/altimeter/setting-hpa", -0.5, 931, 1050]],
     bb_short: ["adjust", [0.5, 931, 1050]],
     cc_long : ["popup"],
     }, 
@@ -100,10 +101,9 @@ var FltInstr = [
     bb_short: ["adjust", ["Inc instr light", 0.02, 0, 0.16]],
     cc_long : ["popup"],
     }, 
-    {name	: "Compass light:off;on", 
+    {name	: "Compass light %s;off|on", 
     prop	   : "/controls/lighting/compass-lights", 
     aa_short: ["adjust", [-1]],
-    aaa_short: ["adjust", [-1]],
     bb_short: ["adjust", [1]],
     cc_long : ["popup"],
     }, 
@@ -119,52 +119,43 @@ var FltInstr = [
 # $FG_ROOT/gui/dialogs/autopilot.xml
 #
 var Autopilot = [ 
-    {name	: "AP altitude\n%u feet set\n%s", 
+    {name	: "AP altitude control\n%u feet hold\n%s;;:disengaged|altitude-hold:engaged", 
     prop	   : ["/autopilot/settings/target-altitude-ft", 
                "/autopilot/locks/altitude"],
     aa_short: ["adjust", [-50, 1000, 20000]],
     bb_short: ["adjust", [50, 1000, 20000]],
-    cc_short: ["script", ["", func {var node = props.globals.getNode("/autopilot/locks/altitude", 1); 
+    cc_short: ["script", [func {var node = props.globals.getNode("/autopilot/locks/altitude", 1); 
         if (node.getValue() != nil) {
-        if (node.getValue() == "altitude-hold") {
-            node.setValue( "" );
-            gui.popupTip("AP Alt disengaged", 0.5);} 
-        else {node.setValue( "altitude-hold");
-            gui.popupTip("AP Alt engaged", 0.5);}
+            if (node.getValue() == "altitude-hold") {node.setValue( "" )} 
+            else {node.setValue( "altitude-hold")}
 		      }
-		      }]],
+		  }]],
     cc_long : ["popup"],
     }, 
-    {name	: "AP heading\n%u deg set\n%s", 
+    {name	: "AP heading control\nHeading %u\n%s;;:disengaged|dg-heading-hold:engaged", 
     prop	   : ["/autopilot/settings/heading-bug-deg", 
                "/autopilot/locks/heading"],
     aa_short: ["adjust", [-1, 0, 359, 1]],
     bb_short: ["adjust", [1, 0, 359, 1]],
-    cc_short: ["script", ["", func {var node = props.globals.getNode("/autopilot/locks/heading", 1); 
+    cc_short: ["script", [func {var node = props.globals.getNode("/autopilot/locks/heading", 1); 
         if (node.getValue() != nil) {
-        if ( node.getValue() == "dg-heading-hold") {
-            node.setValue( "" );
-            gui.popupTip("AP Head disengaged", 0.5);} 
-        else {node.setValue( "dg-heading-hold");
-            gui.popupTip("AP Head engaged", 0.5);}   
+            if ( node.getValue() == "dg-heading-hold") {node.setValue( "" )} 
+            else {node.setValue( "dg-heading-hold")}   
 		      }
-		      }]],
+		  }]],
     cc_long : ["popup"],
     }, 
-    {name	: "AP speed\n%u kt set\n%s", 
+    {name	: "AP velocity control\n%u kt on throttle\n%s;;:disengaged|speed-with-throttle:engaged", 
     prop	   : ["/autopilot/settings/target-speed-kt", 
                "/autopilot/locks/speed"],
-    aa_short: ["adjust", ["Target speed ", "/autopilot/settings/target-speed-kt", -5, 110, 140]],
-    bb_short: ["adjust", ["Target speed ", "/autopilot/settings/target-speed-kt", 5, 110, 140]],
-    cc_short: ["script", ["", func {var node = props.globals.getNode("/autopilot/locks/speed", 1); 
+    aa_short: ["adjust", [-5, 110, 140]],
+    bb_short: ["adjust", [5, 110, 140]],
+    cc_short: ["script", [func {var node = props.globals.getNode("/autopilot/locks/speed", 1); 
         if (node.getValue() != nil) {
-        if ( node.getValue() == "speed-with-throttle") {
-            node.setValue( "" );
-            gui.popupTip("AP Throttle disengaged", 0.5);} 
-        else {node.setValue( "speed-with-throttle");
-            gui.popupTip("AP Throttle engaged", 0.5);}   
+            if ( node.getValue() == "speed-with-throttle") {node.setValue( "" )} 
+            else {node.setValue( "speed-with-throttle")}   
 		      }
-		      }]],
+		  }]],
     cc_long : ["popup"],
     }, 
     ];
@@ -183,17 +174,17 @@ var NavLights = [
     cc_short: ["toggle"],
     cc_long : ["popup"],
     }, 
-    {name	: "Passing light:off;on", 
+    {name	: "Passing light %s;off|on", 
     prop	   : "/controls/lighting/strobe", 
     cc_short: ["toggle"],
     cc_long : ["popup"],
     }, 
-    {name	: "Running light:off;on", 
+    {name	: "Running light %s;off|on", 
     prop	   : "/controls/lighting/nav-lights", 
     cc_short: ["toggle"],
     cc_long : ["popup"],
     },
-    {name	: "Tail light:off;on", 
+    {name	: "Tail light %s;off|on", 
     prop	   : "/controls/lighting/beacon", 
     cc_short: ["toggle"],
     cc_long : ["popup"],
@@ -209,7 +200,6 @@ var NavLights = [
 # $FG_ROOT/gui/dialogs/radios.xml
 #
 var Radio = [
-#    {name	: "COM1 (1 MHz)\n%.3f MHz standby\n%.3f MHz selected", 
     {name	: "COM1 (1 MHz)\n%2$.3f MHz selected\n%1$.3f MHz standby", 
     prop	   : ["/instrumentation/comm[0]/frequencies/standby-mhz", 
                "/instrumentation/comm[0]/frequencies/selected-mhz"],
