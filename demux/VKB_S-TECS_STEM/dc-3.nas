@@ -119,7 +119,8 @@ var FltInstr = [
 # $FG_ROOT/gui/dialogs/autopilot.xml
 #
 var Autopilot = [ 
-    {name	: "AP altitude control\n%u feet hold\n%s;;:disengaged|altitude-hold:engaged", 
+#    {name	: "AP altitude control\n%u feet alt hold\n%s;;:disengaged|altitude-hold:engaged", 
+    {name	: "AP %2$s\n%1$u feet alt hold;:disengaged|altitude-hold:engaged;", 
     prop	   : ["/autopilot/settings/target-altitude-ft", 
                "/autopilot/locks/altitude"],
     aa_short: ["adjust", [-50, 1000, 20000]],

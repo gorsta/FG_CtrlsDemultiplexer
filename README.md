@@ -204,42 +204,64 @@ E.g. let the item be the altimeter and the hidCtrl be an encoder knob which when
 
 The popup message
 -----------------
-A popup message is displayed in sim after selecting an item. The items name string is used for the message.
+A popup message is displayed in sim after selecting an item. The selected items name string is used for the message.
 
-A popup message may be displayed in sim after performing an action. The message is composed according to the following rules.
+A popup message is displayed in sim after an action was performed. The message is composed according to the following rules.
 
-When no message string is given in the params vector:  
+No message string is given in the params vector:  
 
-> *The items name string is used for the popup message*
+> *The items name string is displayed after the action*
 
-Message string is empty, "": 
+The message string is empty, "": 
 
 > *No popup message is displayed*
     
-Message string does not end with a space:  
+The message string does not end with a space:  
 
 > *Only the message string is displayed after the action*
 
-Message string ends with a space: 
+The message string ends with a space: 
 
-> *The message string with standard formatted property value is displayed after the action*
+> *The message string with a standard formatted property value is displayed after the action*
 
 Message string contains the % (formatting) character:  
 
-> *Formatting embedded in the message string is applied to the property value. Message string with the property value is displayed after the action.* 
+> *The message string with property value(s) formatted accordingly is displayed after the action.* 
 
-For action "script" there would generally be no obvious property associated. Therefore, only the message string is displayed.
 
-In some cases enumeration of strings provide for a better display message than the actual integer value of the property. For this purpose a string may consist of substrings separated by delimiters, ";",  to provide enumeration of specific substrings for each integer value of the property. E.g.: 
+The message string
+------------------
+The display message may contain several property values. For that purpose more than one property path may be provided to the action, in a vector. Most actions act on only the first of these properties but all of them are provided for the display message.
 
-    "Tanks OFF;Tank RIGHT;Tanks BOTH;Tank LEFT" for the values 0, 1, 2, 3 of the property for the fuel tank selector. 
+The message string with format specifiers and property values is converted to a display message with nasal's sprintf() function. Supported format specifiers are described in https://wiki.flightgear.org/Nasal_library#sprintf(). In addition, the cdmux implementation also support argument reordering (n$ immediately after % indicates nth argument). 
 
-The first substring may be a label separated from the rest with a ":" as delimiter. E.g.: 
+In some cases enumeration of strings provide for a better display message than the actual integer value of the property. For this purpose a string may consist of substrings separated by delimiters, "|",  to provide enumeration of specific substrings for each integer value of the property. E.g.: 
 
-    "Tanks:OFF;RIGHT;BOTH;LEFT". This would produce the enumerator strings "Tanks: OFF", "Tanks: RIGHT", "Tanks: BOTH", "Tanks: LEFT" selectable as message string. 
+    "OFF|RIGHT|BOTH|LEFT" for the values 0, 1, 2, 3 of the property for the fuel tank selector. 
+    
+In other cases replacements of strings are preferable. E.g. the default autopilot property /autopilot/locks/altitude has either the value "" or "altitude-hold". With string replacements ":disengaged|altitude-hold:engaged" the popup message would instead show "disengaged" and "engaged".  
 
-The selected enumerator string is subject to the same preparation for display as any message string, as described above.
+The structure of the message string is:  
 
+        "Display msg w fmt specs (and arg reordering);1st value enum or replacement strings;2nd val enum or repl str;3rd val enum or repl str"
+
+With no enumeration/replacement of strings the message string becomes:  
+
+        "Display msg w fmt specs (and arg reordering)"
+
+**Example:**  
+    *name	: "AP %2$s\n%1$u feet alt hold;:disengaged|altitude-hold:engaged;"*  
+    *prop    : ["/autopilot/settings/target-altitude-ft", "/autopilot/locks/altitude"]*  
+
+could produce the popup messages:  
+
+        AP disengaged  
+        5000 feet hold   
+
+or  
+
+        AP engaged  
+        5000 feet hold   
 
 The joystick xml file
 ---------------------

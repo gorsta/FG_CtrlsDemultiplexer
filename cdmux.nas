@@ -92,7 +92,7 @@ var load_into = func (hash, nasfile) {
 
 
 ##
-# Demultiplexer actions
+# Demultiplexer actions and supporting functions
 #
 var propexists = func(props) {
 #	print('propexists');
@@ -188,12 +188,16 @@ debug.dump([str, fmt, props]);
     }
 
 
+##
+# Action
 var popup = func(str, props=nil) {
 # Wrapper for showPopup
     if (props==nil or propexists(props)) {showPopup(str, nil, props)}
     return 1; # Task is completed regardless wether a property was toggled or not
     }
 
+##
+# Action
 var toggle = func(popup, props) {
 # Toggle a property
     if (propexists(props)) {
@@ -203,6 +207,8 @@ var toggle = func(popup, props) {
     return 1; # Task is completed regardless wether a property was toggled or not
     }
 
+##
+# Action
 var swap = func(popup, props) {
 # Swap the values of two properties
     if (size(props)<2) { # popup error message
@@ -220,6 +226,8 @@ var swap = func(popup, props) {
     return 1; # Task is completed regardless wether a property was toggled or not
     }
 
+##
+# Action
 var adjust = func(popup, props, step=1, min=0, max=1, wrap=0) {
 # Adjust a property within bounds
     if (propexists(props)) {
@@ -239,6 +247,8 @@ var adjust = func(popup, props, step=1, min=0, max=1, wrap=0) {
     return 1; # Task is completed regardless wether a property was changed or not
     }
 
+##
+# Action
 var script = func(popup, prop, function) {
 # Run a script
     if (prop==nil or propexists(prop)) {
@@ -356,7 +366,7 @@ var create_button = func (nbr, grp, sw) {
     }
 
 ##
-# Holds the demultiplexer setup with control groups, events and actions
+# Holds the demultiplexer setup(s) with control groups, events and actions
 #
 var data = {}; 
 # Setup "Unused" Ctrls/group for maping buttons that are connected in 
@@ -369,7 +379,7 @@ data["Unused"].items[0].name = "Ugroup";
 data["Unused"].items[0].items = [{name	: "Non"}];
 
 ##
-# Check objects before loading
+# Functions for checking objects before loading
 #
 var existNonEmpty = func(obj, type) {
     if (obj != nil) { # This test fails and throws '[INFO]:nasal   undefined symbol:' if obj is a namespace
@@ -409,7 +419,7 @@ var propertypath = func(obj) {
 
 ##
 # EXPORTED
-# Function to load the demultiplexer setup
+# Function to load a demultiplexer setup
 #
 var load_dmx_config = func (hid) {
 
