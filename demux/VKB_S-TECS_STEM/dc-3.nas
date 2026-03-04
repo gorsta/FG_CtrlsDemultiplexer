@@ -20,15 +20,15 @@
 # mechanism but cc_short and cc_long are free to use for actions on properties.
 #
 # A single letter id e.g. 'e' have all four events ('e_down', e_up', 'e_short'
-# and 'e_long') available for acting on properties.
+# and 'e_long') available for actions.
 #
 print("Loading dc-3 S-TECS_STEM dmux");
 
 ##
 # Groups of buttons to use with the demultipleser
 #
-#var hidCtrls = ["EN1", "EN2", "SW12"];
-var hidCtrls = ["EN1", "EN2"];
+var hidCtrls = ["EN1", "EN2", "SW12"];
+#var hidCtrls = ["EN1", "EN2"];
 #var hidCtrls = ["EN1"];
 #var hidCtrls = ["EN2"];
 
@@ -66,47 +66,42 @@ var EN2items = ["NavLights", "Radio"];
 #var EN2items = ["NavLights"];
 #var EN2items = ["Radio"];
 
-#var SW12items = ["EngCtrls"];
+var SW12items = ["EngCtrls"];
 
 ##
 # Sim/cockpit controls
 #
 
-
-var xFltInstr = [ 
-    {name	: "ALTimeter ", 
-#    prop	   : "/instrumentation/altimeter/setting-inhg", 
-    aa_short: ["adjust", ["", "/instrumentation/altimeter/setting-inhg", -0.02, 27.5, 31]],
-    bb_short: ["adjust", ["/instrumentation/altimeter/setting-inhg", 0.02, 27.5, 31]],
-    cc_long : ["popup"],
-    }, 
-    ];
-
 var FltInstr = [ 
+
     {name	: "ALTimeter: %.2f inHg", 
     prop	   : "/instrumentation/altimeter/setting-inhg", 
     aa_short: ["adjust", [-0.02, 27.5, 31]],
     bb_short: ["adjust", [0.02, 27.5, 31]],
     cc_long : ["popup"],
     }, 
+    
     {name	: "ALTimeter: %.1f hPa", 
     prop	   : "/instrumentation/altimeter/setting-hpa", 
-    aa_short: ["adjust", ["/instrumentation/altimeter/setting-hpa", -0.5, 931, 1050]],
+    aa_short: ["adjust", [-0.5, 931, 1050]],
     bb_short: ["adjust", [0.5, 931, 1050]],
     cc_long : ["popup"],
     }, 
+    
     {name	: "Instr light", 
     prop	   : "/controls/lighting/instruments-norm", 
     aa_short: ["adjust", ["Dec instr light", -0.02, 0, 0.16]],
     bb_short: ["adjust", ["Inc instr light", 0.02, 0, 0.16]],
     cc_long : ["popup"],
     }, 
+    
     {name	: "Compass light %s;off|on", 
     prop	   : "/controls/lighting/compass-lights", 
     aa_short: ["adjust", [-1]],
     bb_short: ["adjust", [1]],
     cc_long : ["popup"],
     }, 
+    
     ];
 
 ##
@@ -119,7 +114,7 @@ var FltInstr = [
 # $FG_ROOT/gui/dialogs/autopilot.xml
 #
 var Autopilot = [ 
-#    {name	: "AP altitude control\n%u feet alt hold\n%s;;:disengaged|altitude-hold:engaged", 
+
     {name	: "AP %2$s\n%1$u feet alt hold;:disengaged|altitude-hold:engaged;", 
     prop	   : ["/autopilot/settings/target-altitude-ft", 
                "/autopilot/locks/altitude"],
@@ -133,7 +128,8 @@ var Autopilot = [
 		  }]],
     cc_long : ["popup"],
     }, 
-    {name	: "AP heading control\nHeading %u\n%s;;:disengaged|dg-heading-hold:engaged", 
+    
+    {name	: "AP %2$s\nheading bug %1$u deg;:disengaged|dg-heading-hold:engaged;", 
     prop	   : ["/autopilot/settings/heading-bug-deg", 
                "/autopilot/locks/heading"],
     aa_short: ["adjust", [-1, 0, 359, 1]],
@@ -146,7 +142,8 @@ var Autopilot = [
 		  }]],
     cc_long : ["popup"],
     }, 
-    {name	: "AP velocity control\n%u kt on throttle\n%s;;:disengaged|speed-with-throttle:engaged", 
+    
+    {name	: "AP %2$s\n%1$u kt on throttle;:disengaged|speed-with-throttle:engaged;", 
     prop	   : ["/autopilot/settings/target-speed-kt", 
                "/autopilot/locks/speed"],
     aa_short: ["adjust", [-5, 110, 140]],
@@ -159,37 +156,44 @@ var Autopilot = [
 		  }]],
     cc_long : ["popup"],
     }, 
+    
     ];
 
 ##
 # Navlights controls
 #
 var NavLights = [
+
     {name	: "L landing light", 
     prop	   : "/controls/lighting/landing-lights", 
-    cc_short: ["toggle", []], # Leave this as an example
+    cc_short: ["toggle", []], # The empty parenthesis is not necessary. Cf. next items.
     cc_long : ["popup"],
     }, 
+    
     {name	: "R landing light", 
     prop	   : "/controls/lighting/taxi-light", 
     cc_short: ["toggle"],
     cc_long : ["popup"],
     }, 
+    
     {name	: "Passing light %s;off|on", 
     prop	   : "/controls/lighting/strobe", 
     cc_short: ["toggle"],
     cc_long : ["popup"],
     }, 
+    
     {name	: "Running light %s;off|on", 
     prop	   : "/controls/lighting/nav-lights", 
     cc_short: ["toggle"],
     cc_long : ["popup"],
     },
+    
     {name	: "Tail light %s;off|on", 
     prop	   : "/controls/lighting/beacon", 
     cc_short: ["toggle"],
     cc_long : ["popup"],
     }, 
+    
     ];
 
 ##
@@ -201,6 +205,7 @@ var NavLights = [
 # $FG_ROOT/gui/dialogs/radios.xml
 #
 var Radio = [
+
     {name	: "COM1 (1 MHz)\n%2$.3f MHz selected\n%1$.3f MHz standby", 
     prop	   : ["/instrumentation/comm[0]/frequencies/standby-mhz", 
                "/instrumentation/comm[0]/frequencies/selected-mhz"],
@@ -209,7 +214,8 @@ var Radio = [
     cc_short: ["swap",],
     cc_long : ["popup"],
     }, 
-    {name	: "COM1 (25 kHz)\n%.3f MHz standby\n%.3f MHz selected", 
+    
+    {name	: "COM1 (25 kHz)\n%2$.3f MHz selected\n%1$.3f MHz standby", 
     prop	   : ["/instrumentation/comm[0]/frequencies/standby-mhz", 
                "/instrumentation/comm[0]/frequencies/selected-mhz"],
     aa_short: ["adjust", [-0.025, 118, 136.975]],
@@ -217,7 +223,8 @@ var Radio = [
     cc_short: ["swap",],
     cc_long : ["popup"],
     }, 
-    {name	: "COM2 (1 MHz)\n%.3f MHz standby\n%.3f MHz selected", 
+    
+    {name	: "COM2 (1 MHz)\n%2$.3f MHz selected\n%1$.3f MHz standby", 
     prop	   : ["/instrumentation/comm[1]/frequencies/standby-mhz", 
                "/instrumentation/comm[1]/frequencies/selected-mhz"],
     aa_short: ["adjust", [-1, 118, 136.975]],
@@ -225,7 +232,8 @@ var Radio = [
     cc_short: ["swap",],
     cc_long : ["popup"],
     }, 
-    {name	: "COM2 (25 kHz)\n%.3f MHz standby\n%.3f MHz selected", 
+    
+    {name	: "COM2 (25 kHz)\n%2$.3f MHz selected\n%1$.3f MHz standby", 
     prop	   : ["/instrumentation/comm[1]/frequencies/standby-mhz", 
                "/instrumentation/comm[1]/frequencies/selected-mhz"],
     aa_short: ["adjust", [-0.025, 118, 136.975]],
@@ -233,7 +241,8 @@ var Radio = [
     cc_short: ["swap",],
     cc_long : ["popup"],
     }, 
-    {name	: "NAV1 (1 MHz)\n%.3f MHz standby\n%.3f MHz selected\nradial %u deg", 
+    
+    {name	: "NAV1 (1 MHz)\n%2$.3f MHz selected\n%1$.3f MHz standby\nradial %3$u deg", 
     prop	   : ["/instrumentation/nav[0]/frequencies/standby-mhz", 
                "/instrumentation/nav[0]/frequencies/selected-mhz",
                "/instrumentation/nav[0]/radials/selected-deg"],
@@ -242,7 +251,8 @@ var Radio = [
     cc_short: ["swap",],
     cc_long : ["popup"],
     }, 
-    {name	: "NAV1 (50 kHz)\n%.3f MHz standby\n%.3f MHz selected\nradial %u deg", 
+    
+    {name	: "NAV1 (50 kHz)\n%2$.3f MHz selected\n%1$.3f MHz standby\nradial %3$u deg", 
     prop	   : ["/instrumentation/nav[0]/frequencies/standby-mhz", 
                "/instrumentation/nav[0]/frequencies/selected-mhz",
                "/instrumentation/nav[0]/radials/selected-deg"],
@@ -250,15 +260,18 @@ var Radio = [
     bb_short: ["adjust", [0.05, 108, 117.95]],
     cc_short: ["swap",],
     cc_long : ["popup"],
-    }, 
-    {name	: "NAV1 radial %u deg", 
-    prop	   : "/instrumentation/nav[0]/radials/selected-deg",
+    },
+    
+    {name	: "NAV1 (radial)\n%3$.3f MHz selected\n%2$.3f MHz standby\nradial %1$u deg", 
+    prop	   : ["/instrumentation/nav[0]/radials/selected-deg", 
+               "/instrumentation/nav[0]/frequencies/standby-mhz", 
+               "/instrumentation/nav[0]/frequencies/selected-mhz"],
     aa_short: ["adjust", [-1, 0, 359, 1]],
     bb_short: ["adjust", [1, 0, 359, 1]],
     cc_long : ["popup"],
     }, 
-
-    {name	: "NAV2 (1 MHz)\n%.3f MHz standby\n%.3f MHz selected\nradial %u deg", 
+    
+    {name	: "NAV2 (1 MHz)\n%2$.3f MHz selected\n%1$.3f MHz standby\nradial %3$u deg", 
     prop	   : ["/instrumentation/nav[1]/frequencies/standby-mhz", 
                "/instrumentation/nav[1]/frequencies/selected-mhz",
                "/instrumentation/nav[1]/radials/selected-deg"],
@@ -267,7 +280,8 @@ var Radio = [
     cc_short: ["swap",],
     cc_long : ["popup"],
     }, 
-    {name	: "NAV2 (50 kHz)\n%.3f MHz standby\n%.3f MHz selected\nradial %u deg", 
+    
+    {name	: "NAV2 (50 kHz)\n%2$.3f MHz selected\n%1$.3f MHz standby\nradial %3$u deg", 
     prop	   : ["/instrumentation/nav[1]/frequencies/standby-mhz", 
                "/instrumentation/nav[1]/frequencies/selected-mhz",
                "/instrumentation/nav[1]/radials/selected-deg"],
@@ -276,13 +290,17 @@ var Radio = [
     cc_short: ["swap",],
     cc_long : ["popup"],
     }, 
-    {name	: "NAV2 radial %u deg", 
-    prop	   : "/instrumentation/nav[1]/radials/selected-deg",
+    
+    {name	: "NAV2 (radial)\n%3$.3f MHz selected\n%2$.3f MHz standby\nradial %1$u deg", 
+    prop	   : ["/instrumentation/nav[1]/radials/selected-deg", 
+               "/instrumentation/nav[1]/frequencies/standby-mhz", 
+               "/instrumentation/nav[1]/frequencies/selected-mhz"],
     aa_short: ["adjust", [-1, 0, 359, 1]],
     bb_short: ["adjust", [1, 0, 359, 1]],
     cc_long : ["popup"],
     }, 
-    {name	: "ADF (10 kHz)\n%u kHz standby\n%u kHz selected\nradial %u deg", 
+    
+    {name	: "ADF (10 kHz)\n%2$u kHz selected\n%1$u kHz standby\nradial %3$u deg", 
     prop	   : ["/instrumentation/adf/frequencies/standby-khz", 
                "/instrumentation/adf/frequencies/selected-khz",
                "/instrumentation/adf/rotation-deg"],
@@ -291,7 +309,8 @@ var Radio = [
     cc_short: ["swap",],
     cc_long : ["popup"],
     }, 
-    {name	: "ADF (1 kHz)\n%u kHz standby\n%u kHz selected\nradial %u deg", 
+    
+    {name	: "ADF (1 kHz)\n%2$u kHz selected\n%1$u kHz standby\nradial %3$u deg", 
     prop	   : ["/instrumentation/adf/frequencies/standby-khz", 
                "/instrumentation/adf/frequencies/selected-khz",
                "/instrumentation/adf/rotation-deg"],
@@ -300,22 +319,28 @@ var Radio = [
     cc_short: ["swap",],
     cc_long : ["popup"],
     }, 
-    {name	: "ADF radial %u deg", 
-    prop	   : "/instrumentation/adf/rotation-deg",
+    
+    {name	: "ADF (radial)\n%3$u kHz selected\n%2$u kHz standby\nradial %1$u deg", 
+    prop	   : ["/instrumentation/adf/rotation-deg", 
+               "/instrumentation/adf/frequencies/standby-khz", 
+               "/instrumentation/adf/frequencies/selected-khz"],
     aa_short: ["adjust", [-1, 0, 359, 1]],
     bb_short: ["adjust", [1, 0, 359, 1]],
     cc_long : ["popup"],
     }, 
+    
     {name	: "DME\n%.3f MHz selected", 
     prop	   : "/instrumentation/dme/frequencies/selected-mhz",
     cc_long : ["popup"],
     }, 
+    
     ];
 
 ##
 # Engines controls
 #
 var EngCtrls = [
+
     {name	: "Fuel controls", 
     aa_long	: ["adjust", ["L fuel valve: %u", "/controls/fuel/left-valve", -1, 0, 5]],
     bb_long	: ["adjust", ["L fuel valve: %u", "/controls/fuel/left-valve", 1, 0, 5]],
@@ -324,6 +349,7 @@ var EngCtrls = [
     c_short	: ["toggle", ["L booster pump ", "/controls/fuel/tank/boost-pump"]],
     f_short	: ["toggle", ["R booster pump ", "/controls/fuel/tank[1]/boost-pump"]],
     }, 
+    
     {name	: "Magnetos & starter", 
     aa_long	: ["adjust", ["L engine magnetos: %u", "/controls/engines/engine/magnetos", -1, 0, 3]],
     bb_long	: ["adjust", ["L engine magnetos: %u", "/controls/engines/engine/magnetos", 1, 0, 3]],
@@ -334,5 +360,6 @@ var EngCtrls = [
     f_up		: ["adjust", ["R engine starter: %u", "/controls/engines/engine[1]/starter", -1]],
     f_down	: ["adjust", ["R engine starter: %u", "/controls/engines/engine[1]/starter", 1]],
     },
+    
     ];
 
