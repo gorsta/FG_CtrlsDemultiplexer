@@ -50,72 +50,122 @@ var EN1items = ["FltInstr"];
 
 var EN2items = ["NavLights"];
 
-var SW12items = ["EngCtrls"];
+#var SW12items = ["EngCtrls"];
 
 
 var FltInstr = [ 
-    {name	: "ALTimeter (inhg)", 
-    aa_short: ["adjust", ["ALTimeter: %.2f inHg", "instrumentation/altimeter/setting-inhg", -0.02, 27.5, 31]],
-    bb_short: ["adjust", ["ALTimeter: %.2f inHg", "instrumentation/altimeter/setting-inhg", 0.02, 27.5, 31]],
+
+    {name	: "ALTimeter: %.2f inHg", 
+    prop	   : "/instrumentation/altimeter/setting-inhg", 
+    aa_short: ["adjust", [-0.02, 27.5, 31]],
+    bb_short: ["adjust", [0.02, 27.5, 31]],
+    cc_long : ["popup"],
     }, 
-    {name	: "ALTimeter (hPa)", 
-    aa_short: ["adjust", ["ALTimeter: %.1f hPa", "instrumentation/altimeter/setting-hpa", -0.5, 931, 1050]],
-    bb_short: ["adjust", ["ALTimeter: %.1f hPa", "instrumentation/altimeter/setting-hpa", 0.5, 931, 1050]],
+    
+    {name	: "ALTimeter: %.1f hPa", 
+    prop	   : "/instrumentation/altimeter/setting-hpa", 
+    aa_short: ["adjust", [-0.5, 931, 1050]],
+    bb_short: ["adjust", [0.5, 931, 1050]],
+    cc_long : ["popup"],
     }, 
-    {name	: "L flight panel light ", 
-    aa_short: ["adjust", ["controls/lighting/flight-panel", -0.05, 0, 1.0]],
-    bb_short: ["adjust", ["controls/lighting/flight-panel", 0.05, 0, 1.0]],
+    
+    {name	: "L flight panel light %.2f", 
+    prop	   : "/controls/lighting/flight-panel", 
+    aa_short: ["adjust", [-0.05, 0, 1.0]],
+    bb_short: ["adjust", [0.05, 0, 1.0]],
+    cc_long : ["popup"],
     }, 
-    {name	: "L flood light ", 
-    aa_short: ["adjust", ["controls/lighting/flood", -0.05, 0, 1.0]],
-    bb_short: ["adjust", ["controls/lighting/flood", 0.05, 0, 1.0]],
+    
+    {name	: "L flood light %.2f", 
+    prop	   : "/controls/lighting/flood", 
+    aa_short: ["adjust", [-0.05, 0, 1.0]],
+    bb_short: ["adjust", [0.05, 0, 1.0]],
+    cc_long : ["popup"],
     }, 
-    {name	: "R flight panel light ", 
-    aa_short: ["adjust", ["controls/lighting/flight-panel[1]", -0.05, 0, 1.0]],
-    bb_short: ["adjust", ["controls/lighting/flight-panel[1]", 0.05, 0, 1.0]],
+    
+    {name	: "R flight panel light %.2f", 
+    prop	   : "/controls/lighting/flight-panel[1]", 
+    aa_short: ["adjust", [-0.05, 0, 1.0]],
+    bb_short: ["adjust", [0.05, 0, 1.0]],
+    cc_long : ["popup"],
     }, 
-    {name	: "R flood light ", 
-    aa_short: ["adjust", ["controls/lighting/flood[1]", -0.05, 0, 1.0]],
-    bb_short: ["adjust", ["controls/lighting/flood[1]", 0.05, 0, 1.0]],
+    
+    {name	: "R flood light %.2f", 
+    prop	   : "/controls/lighting/flood[1]", 
+    aa_short: ["adjust", [-0.05, 0, 1.0]],
+    bb_short: ["adjust", [0.05, 0, 1.0]],
+    cc_long : ["popup"],
     }, 
-    {name	: "Lower panel/pedestal/overhead light ", 
-    aa_short: ["adjust", ["controls/lighting/lwr-panel-ped-ovhd", -0.05, 0, 1.0]],
-    bb_short: ["adjust", ["controls/lighting/lwr-panel-ped-ovhd", 0.05, 0, 1.0]],
+    
+    {name	: "Lower panel-pedestal-overhead light %.2f", 
+    prop	   : "/controls/lighting/lwr-panel-ped-ovhd", 
+    aa_short: ["adjust", [-0.05, 0, 1.0]],
+    bb_short: ["adjust", [0.05, 0, 1.0]],
+    cc_long : ["popup"],
     }, 
-    {name	: "Switch/circuit breaker panel light ", 
-    aa_short: ["adjust", ["controls/lighting/sw-ckt-bkr-panel", -0.05, 0, 1.0]],
-    bb_short: ["adjust", ["controls/lighting/sw-ckt-bkr-panel", 0.05, 0, 1.0]],
+    
+    {name	: "Switch&circuit breaker panel light %.2f", 
+    prop	   : "/controls/lighting/sw-ckt-bkr-panel", 
+    aa_short: ["adjust", [-0.05, 0, 1.0]],
+    bb_short: ["adjust", [0.05, 0, 1.0]],
+    cc_long : ["popup"],
     }, 
-    {name	: "Engine instruments light ", 
-    aa_short: ["adjust", ["controls/lighting/engine-instruments", -0.05, 0, 1.0]],
-    bb_short: ["adjust", ["controls/lighting/engine-instruments", 0.05, 0, 1.0]],
+    
+    {name	: "Engine instruments light %.2f", 
+    prop	   : "/controls/lighting/engine-instruments", 
+    aa_short: ["adjust", [-0.05, 0, 1.0]],
+    bb_short: ["adjust", [0.05, 0, 1.0]],
+    cc_long : ["popup"],
     }, 
-    {name	: "Radio panel light ", 
-    aa_short: ["adjust", ["controls/lighting/radio-panel", -0.05, 0, 1.0]],
-    bb_short: ["adjust", ["controls/lighting/radio-panel", 0.05, 0, 1.0]],
+    
+    {name	: "Radio panel light %.2f", 
+    prop	   : "/controls/lighting/radio-panel", 
+    aa_short: ["adjust", [-0.05, 0, 1.0]],
+    bb_short: ["adjust", [0.05, 0, 1.0]],
+    cc_long : ["popup"],
     }, 
+    
     ];
 
 
 var NavLights = [
-    {name	: "L landing light", 
-    cc_short: ["toggle", ["/controls/electric/leftldg-switch"]],
+
+    {name	: "L landing light %s;off|on", 
+    prop	   : "/controls/electric/leftldg-switch", 
+    cc_short: ["toggle"],
+    cc_long : ["popup"],
     }, 
-    {name	: "Taxi light", 
-    cc_short: ["toggle", ["/controls/electric/taxi-switch"]],
+    
+    {name	: "Taxi light %s;off|on", 
+    prop	   : "/controls/electric/taxi-switch", 
+    cc_short: ["toggle"],
+    cc_long : ["popup"],
     }, 
-    {name	: "R landing light", 
-    cc_short: ["toggle", ["/controls/electric/rightldg-switch"]],
+    
+    {name	: "R landing light %s;off|on", 
+    prop	   : "/controls/electric/rightldg-switch", 
+    cc_short: ["toggle"],
+    cc_long : ["popup"],
     }, 
-    {name	: "Strobe ", 
-    cc_short: ["toggle", ["/controls/electric/strobe-switch"]],
+    
+    {name	: "Strobe %s;off|on", 
+    prop	   : "/controls/electric/strobe-switch", 
+    cc_short: ["toggle"],
+    cc_long : ["popup"],
     }, 
-    {name	: "Nav lights ", 
-    cc_short: ["toggle", ["/controls/electric/nav-switch"]],
-    },
-    {name	: "Beacon ", 
-    cc_short: ["toggle", ["/controls/electric/bcn-switch"]],
+    
+    {name	: "Nav lights %s;off|on", 
+    prop	   : "/controls/electric/nav-switch", 
+    cc_short: ["toggle"],
+    cc_long : ["popup"],
     }, 
+    
+    {name	: "Beacon %s;off|on", 
+    prop	   : "/controls/electric/bcn-switch", 
+    cc_short: ["toggle"],
+    cc_long : ["popup"],
+    }, 
+    
     ];
 
 

@@ -28,20 +28,27 @@ print("Loading default S-TECS_STEM dmux");
 var hidCtrls = ["EN1"];
 
 var EN1buttons = {
-    26: "aa",
-    27: "bb",
-    30: "cc",
+    26: "aa", # encoder ccw
+    27: "bb", # encoder cw
+    30: "cc", # encoder PB
     };
 
 var EN1items = ["FltInstr"];
 
 var FltInstr = [ 
-    {name	: "ALTimeter (inhg)", 
-    aa_short: ["adjust", ["ALTimeter: %.2f inHg", "instrumentation/altimeter/setting-inhg", -0.02, 27.5, 31]],
-    bb_short: ["adjust", ["ALTimeter: %.2f inHg", "instrumentation/altimeter/setting-inhg", 0.02, 27.5, 31]],
+
+    {name	: "ALTimeter: %.2f inHg", 
+    prop	   : "/instrumentation/altimeter/setting-inhg", 
+    aa_short: ["adjust", [-0.02, 27.5, 31]],
+    bb_short: ["adjust", [0.02, 27.5, 31]],
+    cc_long : ["popup"],
     }, 
-    {name	: "ALTimeter (hPa)", 
-    aa_short: ["adjust", ["ALTimeter: %.1f hPa", "instrumentation/altimeter/setting-hpa", -0.5, 931, 1050]],
-    bb_short: ["adjust", ["ALTimeter: %.1f hPa", "instrumentation/altimeter/setting-hpa", 0.5, 931, 1050]],
+    
+    {name	: "ALTimeter: %.1f hPa", 
+    prop	   : "/instrumentation/altimeter/setting-hpa", 
+    aa_short: ["adjust", [-0.5, 931, 1050]],
+    bb_short: ["adjust", [0.5, 931, 1050]],
+    cc_long : ["popup"],
     }, 
+    
     ];

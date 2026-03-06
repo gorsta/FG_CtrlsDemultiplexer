@@ -119,17 +119,13 @@ var showPopup = func(str, fmt=nil, props=nil) {
 #debug.dump([str, fmt, props]);    
 
     # Display message
-    if (!size(str) > 0 ) {print("#### size str =0"); return}
+    if (!size(str) > 0 ) {return}
     # Zero size string given: don't popup
 
     # Display message
-    if (props==nil) {
+    if (props==nil) {gui.popupTip(str, duration); return}
     # No property given, just popup
-        gui.popupTip(str, duration);
-        print("#### size props=nil"); 
-        return;
-        }
-
+        
     # Message string and property path(s) are provided
     # Analyze and prepare sprintf argument vector
     str = split(mk1, str); # Separate msg from rep
@@ -171,12 +167,9 @@ var showPopup = func(str, fmt=nil, props=nil) {
         }
         
     # Display message
-    if (size(msg) > 1) { 
+    if (size(msg) > 1) {gui.popupTip(call(sprintf, spfvec), duration); return}
     # Format code and property value(s) present. popup and return
-        gui.popupTip(call(sprintf, spfvec), duration);
-        return
-        }
-
+        
     # Display message
     if (string.match(msg[0], "* ")) {
     # No format code but an ending space: Add format and property value, popup and return
@@ -186,11 +179,8 @@ var showPopup = func(str, fmt=nil, props=nil) {
         }
 
     # Display message
-    else {
+    else {gui.popupTip(spfvec[0], duration); return}
     # No format code, no ending space: popup message and return
-        gui.popupTip(spfvec[0], duration);
-        return;
-        }
     }
 
 

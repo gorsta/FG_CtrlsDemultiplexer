@@ -28,22 +28,24 @@ print("Loading c182s S-TECS_STEM dmux");
 var hidCtrls = ["EN1", "EN2", "SW12"];
 
 var EN1buttons = {
-    26: "aa",
-    27: "bb",
-    30: "cc",
+    26: "aa", # encoder ccw
+    27: "bb", # encoder cw
+    30: "cc", # encoder PB
     };
 
 var EN2buttons = {
-    28: "aa",
-    29: "bb",
-    31: "cc",
+    28: "aa", # encoder ccw
+    29: "bb", # encoder cw
+    31: "cc", # encoder PB
     };
 
 var SW12buttons = {
-    15: "a",
-    17: "b",
-    18: "d",
-    20: "e",
+    15: "a",  # sw1 toggle up
+    17: "b",  # sw1 toggle down
+    16: "c",  # sw1 PB
+    18: "d",  # sw2 toggle up
+    20: "e",  # sw2 toggle down
+    19: "f",  # sw2 PB
     };
 
 var EN1items = ["FltInstr"];
@@ -53,75 +55,120 @@ var EN2items = ["PanelSwitches_L_side"];
 var SW12items = ["EngCtrls"];
 
 var FltInstr = [ 
-    {name	: "ALTimeter (inhg)", 
-    aa_short: ["adjust", ["ALTimeter: %.2f inHg", "instrumentation/altimeter/setting-inhg", -0.02, 27.5, 31]],
-    bb_short: ["adjust", ["ALTimeter: %.2f inHg", "instrumentation/altimeter/setting-inhg", 0.02, 27.5, 31]],
+
+    {name	: "ALTimeter: %.2f inHg", 
+    prop	   : "/instrumentation/altimeter/setting-inhg", 
+    aa_short: ["adjust", [-0.02, 27.5, 31]],
+    bb_short: ["adjust", [0.02, 27.5, 31]],
+    cc_long : ["popup"],
     }, 
-    {name	: "ALTimeter (hPa)", 
-    aa_short: ["adjust", ["ALTimeter: %.1f hPa", "instrumentation/altimeter/setting-hpa", -0.5, 931, 1050]],
-    bb_short: ["adjust", ["ALTimeter: %.1f hPa", "instrumentation/altimeter/setting-hpa", 0.5, 931, 1050]],
+    
+    {name	: "ALTimeter: %.1f hPa", 
+    prop	   : "/instrumentation/altimeter/setting-hpa", 
+    aa_short: ["adjust", [-0.5, 931, 1050]],
+    bb_short: ["adjust", [0.5, 931, 1050]],
+    cc_long : ["popup"],
     }, 
+    
     {name	: "Instr light", 
-    aa_short: ["adjust", ["Dec instr light", "controls/lighting/instrument-lights-norm", -0.05, 0, 1.0]],
-    bb_short: ["adjust", ["Inc instr light", "controls/lighting/instrument-lights-norm", 0.05, 0, 1.0]],
+    prop	   : "/controls/lighting/instrument-lights-norm", 
+    aa_short: ["adjust", ["Dec instr light", -0.05, 0, 1.0]],
+    bb_short: ["adjust", ["Inc instr light", 0.05, 0, 1.0]],
+    cc_long : ["popup"],
     }, 
+    
     {name	: "Radio light", 
-    aa_short: ["adjust", ["Dec radio light", "controls/lighting/radio-lights-norm", -0.05, 0, 1.0]],
-    bb_short: ["adjust", ["Inc radio light", "controls/lighting/radio-lights-norm", 0.05, 0, 1.0]],
+    prop	   : "/controls/lighting/radio-lights-norm", 
+    aa_short: ["adjust", ["Dec radio light", -0.05, 0, 1.0]],
+    bb_short: ["adjust", ["Inc radio light", 0.05, 0, 1.0]],
+    cc_long : ["popup"],
     }, 
+    
     {name	: "Pedestal light", 
-    aa_short: ["adjust", ["Dec pedestal light", "controls/lighting/pedestal-lights-norm", -0.05, 0, 1.0]],
-    bb_short: ["adjust", ["Inc pedestal light", "controls/lighting/pedestal-lights-norm", 0.05, 0, 1.0]],
+    prop	   : "/controls/lighting/pedestal-lights-norm", 
+    aa_short: ["adjust", ["Dec pedestal light", -0.05, 0, 1.0]],
+    bb_short: ["adjust", ["Inc pedestal light", 0.05, 0, 1.0]],
+    cc_long : ["popup"],
     }, 
+    
     {name	: "Glareshield light", 
-    aa_short: ["adjust", ["Dec glareshield light", "controls/lighting/glareshield-lights-norm", -0.05, 0, 1.0]],
-    bb_short: ["adjust", ["Inc glareshield light", "controls/lighting/glareshield-lights-norm", 0.05, 0, 1.0]],
+    prop	   : "/controls/lighting/glareshield-lights-norm", 
+    aa_short: ["adjust", ["Dec glareshield light", -0.05, 0, 1.0]],
+    bb_short: ["adjust", ["Inc glareshield light", 0.05, 0, 1.0]],
+    cc_long : ["popup"],
     }, 
+    
     ];
 
 var PanelSwitches_L_side = [
-    {name	: "Fuel pump ", 
-    cc_short: ["toggle", ["/controls/engines/engine/fuel-pump"]],
+
+    {name	: "Fuel pump %s;off|on", 
+    prop	   : "/controls/engines/engine/fuel-pump", 
+    cc_short: ["toggle", []],
+    cc_long : ["popup"],
     }, 
-    {name	: "Beacon ", 
-    cc_short: ["toggle", ["/controls/lighting/beacon"]],
+    
+    {name	: "Beacon %s;off|on", 
+    prop	   : "/controls/lighting/beacon", 
+    cc_short: ["toggle", []],
+    cc_long : ["popup"],
     }, 
-    {name	: "Landing light", 
-    cc_short: ["toggle", ["/controls/lighting/landing-lights"]],
+    
+    {name	: "Landing light %s;off|on", 
+    prop	   : "/controls/lighting/landing-lights", 
+    cc_short: ["toggle", []],
+    cc_long : ["popup"],
     }, 
-    {name	: "Taxi light", 
-    cc_short: ["toggle", ["/controls/lighting/taxi-light"]],
+    
+    {name	: "Taxi light %s;off|on", 
+    prop	   : "/controls/lighting/taxi-light", 
+    cc_short: ["toggle", []],
+    cc_long : ["popup"],
     }, 
-    {name	: "Nav lights ", 
-    cc_short: ["toggle", ["/controls/lighting/nav-lights"]],
+    
+    {name	: "Nav lights %s;off|on", 
+    prop	   : "/controls/lighting/nav-lights", 
+    cc_short: ["toggle", []],
+    cc_long : ["popup"],
     },
-    {name	: "Strobe ", 
-    cc_short: ["toggle", ["/controls/lighting/strobe"]],
+    
+    {name	: "Strobe %s;off|on", 
+    prop	   : "/controls/lighting/strobe", 
+    cc_short: ["toggle", []],
+    cc_long : ["popup"],
     }, 
-    {name	: "Pitot ht ", 
-    cc_short: ["toggle", ["/controls/anti-ice/pitot-heat"]],
+    
+    {name	: "Pitot ht %s;off|on", 
+    prop	   : "/controls/anti-ice/pitot-heat", 
+    cc_short: ["toggle", []],
+    cc_long : ["popup"],
     }, 
+    
     ];
 
 var EngCtrls = [
+
     {name	: "Magnetos, starter and fuel", 
-    a_long	: ["adjust", ["Magnetos:OFF;R;L;BOTH", "/controls/switches/magnetos", -1, 0, 3]],
-    b_long	: ["adjust", ["Magnetos:OFF;R;L;BOTH", "/controls/switches/magnetos", 1, 0, 3]],
+    a_long	: ["adjust", ["Magnetos %s;OFF|R|L|BOTH", "/controls/switches/magnetos", -1, 0, 3]],
+    b_long	: ["adjust", ["Magnetos %s;OFF|R|L|BOTH", "/controls/switches/magnetos", 1, 0, 3]],
     
-    b_down : ["script", ["", func {if (getprop("/controls/switches/magnetos")==3) {
+    b_down  : ["script", ["", func {if (getprop("/controls/switches/magnetos")==3) {
 		             setprop("/controls/switches/starter", 1);
 		             gui.popupTip("Starter", 0.5); 
 		             # Display popup only when the starter is activated
 		             }
 		        }]],
-      b_up : ["script", ["", func {if (getprop("/controls/switches/magnetos")==3) {
+      b_up  : ["script", ["", func {if (getprop("/controls/switches/magnetos")==3) {
 		             setprop("/controls/switches/starter", 0);
 		             }
 		        }]],
+    c_long  : ["popup", ["Magnetos %s;OFF|R|L|BOTH", "/controls/switches/magnetos"]],
 
-    d_long	: ["adjust", ["Tanks:OFF;RIGHT;BOTH;LEFT", "/controls/switches/fuel_tank_selector", -1, 0, 3, 1]],
-    e_long	: ["adjust", ["Tanks OFF;Tank RIGHT;Tanks BOTH;Tank LEFT", "/controls/switches/fuel_tank_selector", 1, 0, 3, 1]],
+    d_long	: ["adjust", ["Tanks %s;OFF|RIGHT|BOTH|LEFT", "/controls/switches/fuel_tank_selector", -1, 0, 3, 1]],
+    e_long	: ["adjust", ["Tanks %s;OFF|RIGHT|BOTH|LEFT", "/controls/switches/fuel_tank_selector", 1, 0, 3, 1]],
     # Could not figure out how to involve the animation of the fuel tank selector
+    f_long  : ["popup", ["Tanks %s;OFF|RIGHT|BOTH|LEFT", "/controls/switches/fuel_tank_selector"]],
     },
+    
     ];
 
