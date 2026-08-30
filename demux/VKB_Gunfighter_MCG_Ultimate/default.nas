@@ -23,6 +23,10 @@
 # A single letter id e.g. 'e' have all four events ('e_down', e_up', 'e_short'
 # and 'e_long') available for acting on properties.
 #
+
+# Note:
+# This configuration file has actions also for Flightgear Addon FGCamera
+#
 print("Loading default VKB_Gunfighter_MCG_Ultimate dmux");
 
 var hidCtrls = ["LHAT"];
@@ -35,11 +39,17 @@ var LHATitems = ["View"];
 
 var View = [ 
     {name	: "Pilots view", 
-    a_short: ["script", [func {
-		      setprop("/sim/current-view/view-number", 0);
+    # Reset FGCamera view or select Flightgear view 0
+    a_short: ["script", ["", func {
+              if (getprop("/addons/by-id/a.marius.FGCamera/addon-devel/fgcamera-enabled")) {
+                  fgcommand("fgcamera-reset-view")}
+              else {
+		          setprop("/sim/current-view/view-number", 0)}
 		      }]],
-    a_long: ["script", ["pilots view reset", func {
+    # Switch (from FGCamera) to Flightgear view 0 and reset view
+    a_long: ["script", ["Flightgear view reset", func {
             setprop("/sim/current-view/view-number", 0);
+            setprop("/sim/panel/visibility", false); # Does not work (Disable 2D panel)
             view.resetView();		# only resets tilt/pan/zoom:
             # must reset x/y/z view point separately
             vn = getprop("/sim/current-view/view-number");

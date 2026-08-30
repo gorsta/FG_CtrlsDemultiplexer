@@ -14,38 +14,48 @@
 ##############################################################################
 var ot = emexec.OperationTimer.new("VSD", 3);
 
+var v = 0; # verbose messages print to terminal and log
 var banner = '*** cdmux: ';
 print(banner~'loading cdmux');
-
-var duration = 2.5; # popup duration
-var longpress = 0.4; # button down duration required for "long" press
-
-##
-# String delimiters. Changing any of these delimiters will require a revision 
-# of the popup/sprintf format strings in each of the configuration files.
-# DO NOT USE: var del = "/"; # delimiter
-# '/' must not be used in a popup message string! It is already in reserved 
-# use as the identifying characteristic of a property path string.
-#
-var mk1 = ';'; # format str/ rep str and 
-# enum/replace marker, e.g.:										';OFF|RIGHT|BOTH|LEFT'
-var mk2 = '%'; # Dont change or use! 
-# Format marker '%' is hardcoded inline
-var mk3 = '$'; # Dont change or use! 
-# Argument reordering marker '$' is hard coded inline
-var mk4 = '|'; # enum str/srch-repl str marker, e.g.:		'|altitude-hold:engaged'
-var mk5 = ':'; # replace str marker, e.g.:					':engaged'
-#var mk = '`'; # alternative marker
-#var mk = '\'; # alternative marker
-#var mk = '@'; # alternative marker
-
-var del = ";"; # substring (not label) delimiter
-var del2 = ":"; # label delimiter
-var del3 = "$"; # Dont change or use! Argument reordering marker '$' is hard coded inline
 
 var fghome = getprop("/sim/fg-home");
 var matchingpatternsfile = "dmuxmatchmodel.nas";
 var shiftPropertyPath = "/devices/status/joysticks/modifier";
+
+var duration = 2.5;  # duration of popup message
+var longpress = 0.4; # button down duration required for "long" press
+var delay = 0.2;     # skip flag reset delay. Set greater then 
+                     # time to next pulse of encoder pulse train
+
+##
+# String delimiters. Changing any of these delimiters will require a revision 
+# of the popup/sprintf format strings in each of the configuration files.
+#
+# DO NOT USE: var mk = "/"; # delimiter
+# '/' must not be used in a popup message string! It is already in reserved 
+# use as the identifying characteristic of a property path string.
+#
+var mk1 = ';'; # marker separating message string and replacement string(s), e.g.:
+#               'L fuel valve\n%s;OFF|AUX RH|MAIN RH|MAIN LH|AUX LH|OFF'
+#               'AP %2$s\n%1$u feet alt hold;:disengaged|altitude-hold:engaged;'
+#
+var mk2 = '%'; # Not used. Dont change or use! 
+# Format marker '%' is hardcoded inline
+#
+var mk3 = '$'; # Not used. Dont change or use! 
+# Argument reordering marker '$' is hard coded inline
+#
+var mk4 = '|'; # marker separating enum strings or str:replacement str pair(s), e.g.:		
+#               'OFF|AUX RH|MAIN RH|MAIN LH|AUX LH|OFF'
+#               ':disengaged|altitude-hold:engaged'
+#
+var mk5 = ':'; # marker separating str to replace and replacement str, e.g.:
+#               ':disengaged'   (note: empty string is to be replaced by 'disengaged')
+#               'altitude-hold:engaged'
+#
+#var mk = '`'; # alternative marker character
+#var mk = '\'; # alternative marker character
+#var mk = '@'; # alternative marker character
 
 
 # 1st run of this code?
@@ -81,7 +91,7 @@ var load_into = func (hash, nasfile) {
 	         print('. . in file: ', nasfile);
 	         return 0;
 			   }
-
+        print(banner~'Loaded ' ~ nasfile);
         return 1;
         }
     else {
@@ -94,9 +104,8 @@ var load_into = func (hash, nasfile) {
 ##
 # Demultiplexer actions and supporting functions
 #
+
 var propexists = func(props) {
-#	print('propexists');
-#	debug.dump(props);
 # Check existence of props
     if (isvec(props)) {
         forindex(var i; props) {
@@ -128,6 +137,10 @@ var showPopup = func(str, fmt=nil, props=nil) {
         
     # Message string and property path(s) are provided
     # Analyze and prepare sprintf argument vector
+    #
+    # str   popup message (including format string(s) and replacement(s) string(s))
+    # msg   popup message (including format string(s)
+    # rep   replacement(s) string(s)  
     str = split(mk1, str); # Separate msg from rep
     var msg = split('%', str[0]);
     var spfvec = [msg[0]];
@@ -262,20 +275,33 @@ var script = func(popup, prop, function) {
 
 
 ##
-# Class for group of sim controls
+# Class 
+# for a group of hid controls or sim controls.
+# The object holds a list of items and manages an index pointing to one of the items
 #
-# A field: name of the group
-# A field: items (vector of items i.e. control groups or controls within a group)
-# A field: focus (index pointer for vector of items)
-# A field: skip (boolean)
-# A method: set_skip to set skip true/false
-# Several 
-#   field: representing an event that is associated with an action: event (key)/action (value)
-#     The action is incr/decr the focus, or no action if skip is true
+# items: (vector of items i.e. control groups or controls within a group)
+# fcs  : focus (index pointer for list of items)
+# skip : (boolean) determines wether a matching event is captured to 
+#                         incr/decr the focus or just ignored.
+# aa_short: event to decrease focus if not skip
+# bb_short: event to increase focus if not skip
 #
-# Thus, the skip flag determines wether the matching event is captured to 
-# increment/decrement the focus or just ignored.
+# Encoders on hid VKB-Sim (C) Alex Oz 2023 S-TECS MODERN THROTTLE STANDARD STEM
+# and possibly others:
+# When turning the encoder knob rapidly the hid queues up encoder pulses and transmits 
+# them one after the other. The timer is implemented to delay re-setting the skip flag 
+# until the next encoder pulse has arrived and reset the timer. This ensures that all 
+# encoder pulses acts on the item (as intended) even if the encoder knob is released 
+# (to reset the skip flag) before the pulse train is finished.
 #
+# used for skip flag reset delay:
+# pre_skip
+# timer
+# delay
+# level     0: hid level           - items: list of control groups
+#           1: control group level - items: list of sim controls
+#           (skip flag reset delay applied only to the control group level)
+
 var FGctrl = {
     class_name: "FGctrl", # "static"/"shared variable"
 
@@ -283,22 +309,40 @@ var FGctrl = {
         #create an instance / object
         var obj = { parents: [FGctrl] };
         obj.name = "";
-        obj.fcs = 0;
-        obj.skip = 0;
-        obj.items = [{}]; # Even with no items the size is 1
+        obj.fcs = 0; # item pointer
+        obj.items = [{}]; # Size is 1, prevents index (0) out of bounds
+        obj.skip = 0; # actual skip value
+        
+        obj.pre_skip = 0; # requested skip value
+        obj.level = nil; # 0: HID level           - items: vector of control groups
+                         # 1: Control group level - items: vector of sim controls
+        obj.timer = nil;
+        obj.delay = delay; # Skip flag reset delay
+      
         obj.set_skip = func (par) {
-                    if (par == "shift") {me.skip = !shift}
-                    else if (par) {me.skip = 1}
-                    else {me.skip = 0}
-                    return 1;
+                    if (me.level) {
+                        if                              # par=="delay", pre_skip==0,
+                        (!me.pre_skip and par == "delay") {
+                            me.timer.restart(me.delay)}
+                        else if (par) {                 # par==1, 
+                            me.pre_skip = 1;
+                            me.skip     = 1}
+                        else {                          # par==0, 
+                            me.pre_skip = 0;
+                            me.timer.restart(me.delay)}
+                        }
+                    else {if (par == "shift") {me.skip = !shift}}
+                    return 1; 
                     };
+                    
         obj.aa_short = [func {if (!me.skip) 
-                    {me.fcs = math.mod(me.fcs -= 1, size(me.items)); return 1}
-                    else {return 0}
+                    {me.fcs = math.mod(me.fcs -= 1, size(me.items)); return 1} # Task is completed
+                    else {me.set_skip("delay"); return 0}                      # no action performed
                     }, [], "show"];
+                    
         obj.bb_short = [func {if (!me.skip) 
-                    {me.fcs = math.mod(me.fcs += 1, size(me.items)); return 1}
-                    else {return 0}
+                    {me.fcs = math.mod(me.fcs += 1, size(me.items)); return 1} # Task is completed
+                    else {me.set_skip("delay"); return 0}                      # no action performed
                     }, [], "show"];
 
         obj.init();
@@ -306,21 +350,25 @@ var FGctrl = {
         },
 
     init: func () {
-         print(banner~'Object created: ', me.class_name);
+         me.timer = maketimer(me.delay, func(){me.skip = 0; 
+             #print(banner~'TIMER: ', me.name);
+             });
+         me.timer.singleShot = 1;
+         #print(banner, me.class_name~' object instantiated');
          return ;
         },
+             
     };
 
 
 ##
 # Find aircraft demux configuration file
 #
+print(" ");
+print(banner~'Aircraft demux matching file:');
 if (fghome != nil) {
     var file = fghome ~ "/Input/Joysticks/" ~ matchingpatternsfile;
-    if (io.stat(file) != nil) {
-        load_into(var patterns = {}, file);
-        print(banner~'Loaded ' ~ file);
-        }
+    if (io.stat(file) != nil) {load_into(var patterns = {}, file)}
     }
 
 var aircraft = getprop('/sim/aircraft');
@@ -370,9 +418,11 @@ var data = {};
 data["Unused"] = FGctrl.new();
 data["Unused"].name = "Unused";
 data["Unused"].items = [];
+v and print(banner~'"'~data["Unused"].name~'" ('~data["Unused"].class_name~' object) created');
 append(data["Unused"].items, FGctrl.new());
 data["Unused"].items[0].name = "Ugroup";
 data["Unused"].items[0].items = [{name	: "Non"}];
+v and print(banner~' |-"'~data["Unused"].items[0].name~'" ('~data["Unused"].class_name~' object) created');
 
 ##
 # Functions for checking objects before loading
@@ -418,9 +468,12 @@ var propertypath = func(obj) {
 # Function to load a demultiplexer setup
 #
 var load_dmx_config = func (hid) {
-
+    
     ##
     # Select a configuration file
+    print(" ");
+    print(banner~hid~'demux aircraft configuration file:');
+
     if (!demux) {demux = "default"}
     var alt = [demux, "default"];
 
@@ -448,6 +501,8 @@ var load_dmx_config = func (hid) {
 
     ##
     # Load hid controls
+    print(" ");
+    
     forindex(var i; dmxconf.hidCtrls) {
     # Looop hid controls
         var hidCtrl = dmxconf.hidCtrls[i];
@@ -461,9 +516,11 @@ var load_dmx_config = func (hid) {
     
         data[hidCtrl] = FGctrl.new();
         data[hidCtrl].name = hidCtrl;
+        data[hidCtrl].level = 0;
         data[hidCtrl].aa_down = [data[hidCtrl].set_skip, ["shift"]];
         data[hidCtrl].bb_down = [data[hidCtrl].set_skip, ["shift"]];
         data[hidCtrl].items = [];
+        print(banner~'"'~data[hidCtrl].name~'" ('~data[hidCtrl].class_name~' object) created');
     
         if (!existNonEmpty(dmxconf[hidCtrl~"buttons"], "hash")) {
             print(banner~'Can not load ', hidCtrl~"buttons", '. Check ', dmxfile);
@@ -496,8 +553,10 @@ var load_dmx_config = func (hid) {
             append(data[hidCtrl].items, FGctrl.new());
             var simControlGroup = data[hidCtrl].items[j];
             simControlGroup.name = hidCtrlItems[j];
+            simControlGroup.level = 1;
             simControlGroup.cc_down = [simControlGroup.set_skip, [1]];
             simControlGroup.cc_up = [simControlGroup.set_skip, [0]];
+            print(banner~' |-"'~simControlGroup.name~'" ('~data[hidCtrl].class_name~' object) created');
 
             var CGitems = dmxconf[hidCtrlItems[j]];
             ##
@@ -533,6 +592,8 @@ var load_dmx_config = func (hid) {
                         simControlGroup.name, ' group: ');
                         debug.dump(CGitems[k]["prop"])}
                     }
+                
+                v and print(banner~'    |-"'~simControlGroup.items[k]["name"]~'" (object) created');
 
                 # Loop the keys of the item
                 foreach(var key; keys(CGitems[k])) {
@@ -623,16 +684,13 @@ var load_dmx_config = func (hid) {
                         }
 
                     # Replace the action labels with the corresponding functions
-                    if (act[0]      == "toggle") {
-                        act[0] = toggle}
-                    else if (act[0] == "adjust") {
-                        act[0] = adjust}
-                    else if (act[0] == "script") {
-                        act[0] = script}
-                    else if (act[0] == "popup") {
-                        act[0] = popup}
-                    else if (act[0] == "swap") {
-                        act[0] = swap}
+                    var act0 = act[0];
+                    
+                    if (     act[0] == "toggle") {act[0] = toggle}
+                    else if (act[0] == "adjust") {act[0] = adjust}
+                    else if (act[0] == "script") {act[0] = script}
+                    else if (act[0] == "popup")  {act[0] = popup}
+                    else if (act[0] == "swap")   {act[0] = swap}
                     else { # Ignore unknown action labels
                         print(banner~'unknown action "', act[0], 
                         '" in "', simControlGroup.items[k]["name"], 
@@ -643,11 +701,15 @@ var load_dmx_config = func (hid) {
                     simControlGroup.items[k][key] = [act[0], act[1][:]];
                     # (deeper) manual copy if vector of property paths
                     if (isvec(act[1][1])) {simControlGroup.items[k][key][1][1] = act[1][1][:]}
+                    #debug.dump(simControlGroup.items[k][key]);
+                    v and print(banner~'       |-"'~key~'":'~act0~' (event:action) registered');
                     
                     # process event key finished
                     } # keys loop
                 } # items loop
             } # groups loop
+        print(banner~'"'~data[hidCtrl].name~'" setup!');
+        print(" ");
         } # hid controls loop
     dmxconf = {};
     return 1;
@@ -683,7 +745,6 @@ ot.log("start");
             if (i < 2 and item[ev][-1] == "show") { # show the item pointed to by the new focus
                     newItem = item.items[item.fcs];
                     var prop = contains(newItem, "prop") ? newItem.prop : nil;
-#                    showPopup(newItem.name, nil, prop)
                     popup(newItem.name, prop)
                 }
             break; # Event matched and action was performed

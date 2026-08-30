@@ -23,7 +23,7 @@
 # A single letter id e.g. 'e' have all four events ('e_down', e_up', 'e_short'
 # and 'e_long') available for acting on properties.
 #
-print("Loading c182s S-TECS_STEM dmux");
+print("Loading C208B S-TECS_STEM dmux");
 
 var hidCtrls = ["EN1", "EN2"];
 

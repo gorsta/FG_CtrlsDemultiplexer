@@ -311,15 +311,17 @@ Example binding for connecting button 28 to the demultiplexer:
 
 Limitations
 -----------
-This code was developed and had limited testing on my setup only (Xeon 3.5 GHz 6 cores, 16 GB ram, RTX4070 12 GB, Linux Debian 12, VKB throttle and joystick) for the DC-3 and the Cessna 182s.
+This code was developed and had limited testing on my setup only (Xeon 3.5 GHz 6 cores, 16 GB ram, RTX4070 12 GB, Linux Debian 12/13, VKB throttle and joystick) for the DC-3 and the Cessna 182s.
 
 Known issues
 ------------
 #### Adjusting e.g. the altimeter using a rotary encoder with pushbutton sometimes end with selecting another item within the group of items.
 
+***Cause:***  
 This can occur when turning the encoder knob rapidly, i.e. faster than the encoder pulses are generated. In this use case the hid queues up the encoder pulses and transmits them one after the other. When the encoder knob is released (after the rapid turn) the skip flag is reset while the hid continues to transmit the remaining encoder pulses which now act on item selection rather than the altimeter. This is reproducible every time with my VKB S-TECS STEM throttle.
 
-This can be remedied by adding a time delay before resetting the skip flag and I plan to do so. In the meantime, turn the encoder knob more slowly or if turning fast, dont release the knob before the pulses have all been transmitted (wait until the altimeter stops updating).
+***This issue has been fixed:***  
+A skip flag reset delay was added.
 
 Acknowledgement
 ---------------
@@ -327,7 +329,7 @@ I am not a programmer and this is my first attempt at Nasal scripting. It all st
 
 Numerous articles in the **Flightgear wiki** and in **$FG_ROOT/Docs**,  
 nasal code in in $FG_ROOT/Nasal,  
-xml files in $FG_ROOT/Input/Joysticks especially  
+xml files in $FG_ROOT/Input/Joysticks especially:  
 Saitek X52 and Thrustmaster Warthog with overlays,  
   
 the **Nasal REPL Interpreter** and the Nasal Console,  
