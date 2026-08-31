@@ -3,7 +3,7 @@
 
 Summary
 -------
-Hid controls demultiplexer, cdmux for short, lets one group of hid buttons bind to a larger number of simulator properties. A rotary encoder with button press, for example, has three switches: ccw rotation, cw rotation and button press. Events from these three switches can be de-multiplexed with cdmux to act on individual members of a (larger) group of sim/cockpit controls, using e.g. ccw/cw to select the simulator control to act on and button press to toggle the control, turning on/off e.g. left landing light, right landing light, taxi light, strobe lights, beacon and navigation lights. The group of hid buttons can be as large as desired and, at the smallest having only one button.  
+Hid controls demultiplexer, cdmux for short, lets one group of hid buttons bind to a larger number of simulator properties. A rotary encoder with button press, for example, can be operated in three ways: ccw rotation, cw rotation and button press. Events from these three operations can be de-multiplexed with cdmux to act on individual members of a (larger) group of sim/cockpit controls, using e.g. ccw/cw to select the simulator control to act on, and button press to toggle the control, turning on/off e.g. left landing light, right landing light, taxi light, strobe lights, beacon and navigation lights. The group of hid buttons can be as large as desired and, at the smallest having only one button.  
 
 cdmux is not plug-and-play ready but a flexible component that has to be configured and "wired" in between properties in Flightgears property tree and group(s) of switch(es) on one or more throttle(s)/joystick(s).
 
@@ -61,8 +61,8 @@ $FG_HOME/Input/Joysticks
          │   └── VKB_S-TECS_STEM                 (config files for this hid)  
          │       │  
          │       ├── dc-3.nas                       (demux DC-3 config)  
-         │       ├── c182s.nas                      (demux DC-3 config)  
-         │       ├── C208B.nas                      (demux DC-3 config)  
+         │       ├── c182s.nas                      (demux Cessna 182 config)  
+         │       ├── C208B.nas                      (demux Cessna 208 config)  
          │       └── default.nas                    (demux default config)  
          │
 
@@ -201,8 +201,8 @@ With these event/action pairs and the skip flag the following functionality is p
               aa_short    select previous item within the group
               bb_short    select next item within the group
     
-    cc_down + aa_short    perform the action of the aa_short event
-    cc_down + bb_short    perform the action of the bb_short event
+    cc_down + aa_short    on the selected item, perform the action of the aa_short event
+    cc_down + bb_short    on the selected item, perform the action of the bb_short event
 
 E.g. let the item be the altimeter and the hidCtrl be an encoder knob which when turned ccw sends pulses on aa, when turned cw sends pulses on bb and the knob pushbutton is connected to cc. The altimeter would then be selected by turning the encoder knob. When selected, the altimeter could be adjusted by holding down and turning the encoder knob.
 
